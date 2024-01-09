@@ -1,0 +1,7 @@
+server:
+  port: 8300
+
+cluster:
+  server:
+    address:
+      -
