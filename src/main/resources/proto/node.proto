@@ -1,0 +1,35 @@
+// 说明使用的是：proto3语法
+syntax = "proto3";
+
+// java_package表示生成java代码的包名
+option java_package = "com.lql.raft.rpc.proto";
+// java_multiple_files = true 表示生成多个java文件，若不设置该属性，则只会生成一个java文件
+option java_multiple_files = true;
+// java_outer_classname表示包含message描述的java文件的类名
+option java_outer_classname = "NodeProto";
+
+
+service ConsistencyService{
+  // 请求投票选举的rpc接口
+  rpc voteRequest(VoteParam) returns (VoteResponse){};
+}
+
+message VoteParam{
+  // 候选人的任期号
+  int64 term = 1;
+  // 节点服务id(自定义)
+  string serverId = 2;
+  // 请求选票的候选人id
+  string candidateId = 3;
+  // 候选人最后日志条目的索引值
+  int64 lastLogIndex = 4;
+  // 候选人最后日志条目的任期号
+  int64 lastLogTerm = 5;
+}
+
+message VoteResponse{
+  // 当前任期号
+  int64 term = 1;
+  // 当候选人赢得该节点投票时为true
+  bool voteGranted = 2;
+}
