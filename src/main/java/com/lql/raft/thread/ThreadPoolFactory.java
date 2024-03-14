@@ -2,10 +2,7 @@ package com.lql.raft.thread;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * 线程池工厂
@@ -43,11 +40,17 @@ public class ThreadPoolFactory {
         log.warn("Exception happen from thread: {}",t.getName(),e);
 
     /**
+     * 定时任务线程池
+     */
+    private static ScheduledExecutorService scheduledExecutorService = getScheduledExecutorService();
+
+    /**
      * 线程池
      */
     private static ThreadPoolExecutor threadPoolExecutor = getInstance();
 
     /**
+     * 普通线程Executor
      * @return ThreadPoolExecutor对象
      */
     private static ThreadPoolExecutor getInstance(){
@@ -58,6 +61,14 @@ public class ThreadPoolFactory {
                 TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(QUEUE_SIZE),
                 new RaftThread());
+    }
+
+    /**
+     * 获取定时任务线程服务
+     * @return ScheduledExecutorService对象
+     */
+    private static ScheduledExecutorService getScheduledExecutorService(){
+        return new ScheduledThreadPoolExecutor(CORE_POOL_SIZE,new RaftThread());
     }
 
     /**
