@@ -52,6 +52,12 @@
             <artifactId>grpc-client-spring-boot-starter</artifactId>
             <version>2.14.0.RELEASE</version>
         </dependency>
+        <!-- rocksdb 依赖 -->
+        <dependency>
+            <groupId>org.rocksdb</groupId>
+            <artifactId>rocksdbjni</artifactId>
+            <version>6.10.2</version>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
