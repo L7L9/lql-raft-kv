@@ -1,7 +1,8 @@
 server:
   port: 8300
 
-cluster:
-  server:
+node:
+  id: 1 #id需要有唯一性
+  cluster:
     address:
       -
