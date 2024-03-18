@@ -1,12 +1,15 @@
 package com.lql.raft.config;
 
+import com.lql.raft.entity.Peer;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 当前节点配置
@@ -24,9 +27,17 @@ public class NodeConfig {
 
     private String address;
 
+    private Set<Peer> peerSet;
+
     {
+        peerSet = new HashSet<>();
         try {
             address = port + InetAddress.getLocalHost().getHostAddress();
+            for(String addr:peerList){
+                if(!addr.equals(address)){
+                    peerSet.add(new Peer(addr));
+                }
+            }
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
