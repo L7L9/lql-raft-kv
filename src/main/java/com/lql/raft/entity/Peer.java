@@ -33,4 +33,8 @@ public class Peer {
     public int hashCode() {
         return Objects.hash(addr);
     }
+
+    public String getAddr() {
+        return addr;
+    }
 }
