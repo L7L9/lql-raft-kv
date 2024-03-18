@@ -49,6 +49,14 @@ public class ThreadPoolFactory {
      */
     private static ThreadPoolExecutor threadPoolExecutor = getInstance();
 
+    public static <T> Future<T> submit(Callable r){
+        return threadPoolExecutor.submit(r);
+    }
+
+    public static void execute(Runnable r){
+        threadPoolExecutor.execute(r);
+    }
+
     /**
      * 普通线程Executor
      * @return ThreadPoolExecutor对象
