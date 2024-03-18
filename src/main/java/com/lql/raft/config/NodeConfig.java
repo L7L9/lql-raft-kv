@@ -4,6 +4,8 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 
 /**
@@ -14,9 +16,19 @@ import java.util.List;
 @Data
 @Configuration
 public class NodeConfig {
-    @Value("${node.id}")
-    private String nodeId;
+    @Value("${server.port}")
+    private String port;
 
     @Value("${node.cluster.address}")
     private List<String> peerList;
+
+    private String address;
+
+    {
+        try {
+            address = port + InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
