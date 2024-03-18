@@ -57,6 +57,14 @@ public class ThreadPoolFactory {
         threadPoolExecutor.execute(r);
     }
 
+    public static void scheduleAtFixedRate(Runnable r,long initDelay,long delay){
+        scheduledExecutorService.scheduleAtFixedRate(r,initDelay,delay,TimeUnit.MILLISECONDS);
+    }
+
+    public static void scheduleWithFixedDelay(Runnable r,long delay){
+        scheduledExecutorService.scheduleWithFixedDelay(r,0,delay,TimeUnit.MILLISECONDS);
+    }
+
     /**
      * 普通线程Executor
      * @return ThreadPoolExecutor对象
