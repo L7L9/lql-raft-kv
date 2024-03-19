@@ -51,7 +51,7 @@ public class LogServiceImpl implements LogService {
     @PostConstruct
     public void init(){
         // 初始化rocksdb
-        String databaseDir = DirConstants.ROOT_DIR + nodeConfig.getNodeId();
+        String databaseDir = DirConstants.ROOT_DIR + nodeConfig.getAddress();
         String logDir = databaseDir + LOG_DIR;
 
         RocksDB.loadLibrary();
