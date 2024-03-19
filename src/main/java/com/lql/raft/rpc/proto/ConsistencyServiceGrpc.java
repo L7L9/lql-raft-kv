@@ -1,10 +1,18 @@
 package com.lql.raft.rpc.proto;
 
 import static io.grpc.MethodDescriptor.generateFullMethodName;
+import static io.grpc.stub.ClientCalls.asyncBidiStreamingCall;
+import static io.grpc.stub.ClientCalls.asyncClientStreamingCall;
+import static io.grpc.stub.ClientCalls.asyncServerStreamingCall;
 import static io.grpc.stub.ClientCalls.asyncUnaryCall;
+import static io.grpc.stub.ClientCalls.blockingServerStreamingCall;
 import static io.grpc.stub.ClientCalls.blockingUnaryCall;
 import static io.grpc.stub.ClientCalls.futureUnaryCall;
+import static io.grpc.stub.ServerCalls.asyncBidiStreamingCall;
+import static io.grpc.stub.ServerCalls.asyncClientStreamingCall;
+import static io.grpc.stub.ServerCalls.asyncServerStreamingCall;
 import static io.grpc.stub.ServerCalls.asyncUnaryCall;
+import static io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall;
 import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;
 
 /**
@@ -48,6 +56,37 @@ public final class ConsistencyServiceGrpc {
       }
     }
     return getVoteRequestMethod;
+  }
+
+  private static volatile io.grpc.MethodDescriptor<com.lql.raft.rpc.proto.AppendEntriesParam,
+      com.lql.raft.rpc.proto.AppendEntriesResponse> getAppendEntriesRequestMethod;
+
+  @io.grpc.stub.annotations.RpcMethod(
+      fullMethodName = SERVICE_NAME + '/' + "AppendEntriesRequest",
+      requestType = com.lql.raft.rpc.proto.AppendEntriesParam.class,
+      responseType = com.lql.raft.rpc.proto.AppendEntriesResponse.class,
+      methodType = io.grpc.MethodDescriptor.MethodType.UNARY)
+  public static io.grpc.MethodDescriptor<com.lql.raft.rpc.proto.AppendEntriesParam,
+      com.lql.raft.rpc.proto.AppendEntriesResponse> getAppendEntriesRequestMethod() {
+    io.grpc.MethodDescriptor<com.lql.raft.rpc.proto.AppendEntriesParam, com.lql.raft.rpc.proto.AppendEntriesResponse> getAppendEntriesRequestMethod;
+    if ((getAppendEntriesRequestMethod = ConsistencyServiceGrpc.getAppendEntriesRequestMethod) == null) {
+      synchronized (ConsistencyServiceGrpc.class) {
+        if ((getAppendEntriesRequestMethod = ConsistencyServiceGrpc.getAppendEntriesRequestMethod) == null) {
+          ConsistencyServiceGrpc.getAppendEntriesRequestMethod = getAppendEntriesRequestMethod =
+              io.grpc.MethodDescriptor.<com.lql.raft.rpc.proto.AppendEntriesParam, com.lql.raft.rpc.proto.AppendEntriesResponse>newBuilder()
+              .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
+              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "AppendEntriesRequest"))
+              .setSampledToLocalTracing(true)
+              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  com.lql.raft.rpc.proto.AppendEntriesParam.getDefaultInstance()))
+              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  com.lql.raft.rpc.proto.AppendEntriesResponse.getDefaultInstance()))
+              .setSchemaDescriptor(new ConsistencyServiceMethodDescriptorSupplier("AppendEntriesRequest"))
+              .build();
+        }
+      }
+    }
+    return getAppendEntriesRequestMethod;
   }
 
   /**
@@ -108,6 +147,16 @@ public final class ConsistencyServiceGrpc {
       asyncUnimplementedUnaryCall(getVoteRequestMethod(), responseObserver);
     }
 
+    /**
+     * <pre>
+     * 追加日志的rpc接口
+     * </pre>
+     */
+    public void appendEntriesRequest(com.lql.raft.rpc.proto.AppendEntriesParam request,
+        io.grpc.stub.StreamObserver<com.lql.raft.rpc.proto.AppendEntriesResponse> responseObserver) {
+      asyncUnimplementedUnaryCall(getAppendEntriesRequestMethod(), responseObserver);
+    }
+
     @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
       return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
           .addMethod(
@@ -117,6 +166,13 @@ public final class ConsistencyServiceGrpc {
                 com.lql.raft.rpc.proto.VoteParam,
                 com.lql.raft.rpc.proto.VoteResponse>(
                   this, METHODID_VOTE_REQUEST)))
+          .addMethod(
+            getAppendEntriesRequestMethod(),
+            asyncUnaryCall(
+              new MethodHandlers<
+                com.lql.raft.rpc.proto.AppendEntriesParam,
+                com.lql.raft.rpc.proto.AppendEntriesResponse>(
+                  this, METHODID_APPEND_ENTRIES_REQUEST)))
           .build();
     }
   }
@@ -145,6 +201,17 @@ public final class ConsistencyServiceGrpc {
       asyncUnaryCall(
           getChannel().newCall(getVoteRequestMethod(), getCallOptions()), request, responseObserver);
     }
+
+    /**
+     * <pre>
+     * 追加日志的rpc接口
+     * </pre>
+     */
+    public void appendEntriesRequest(com.lql.raft.rpc.proto.AppendEntriesParam request,
+        io.grpc.stub.StreamObserver<com.lql.raft.rpc.proto.AppendEntriesResponse> responseObserver) {
+      asyncUnaryCall(
+          getChannel().newCall(getAppendEntriesRequestMethod(), getCallOptions()), request, responseObserver);
+    }
   }
 
   /**
@@ -169,6 +236,16 @@ public final class ConsistencyServiceGrpc {
     public com.lql.raft.rpc.proto.VoteResponse voteRequest(com.lql.raft.rpc.proto.VoteParam request) {
       return blockingUnaryCall(
           getChannel(), getVoteRequestMethod(), getCallOptions(), request);
+    }
+
+    /**
+     * <pre>
+     * 追加日志的rpc接口
+     * </pre>
+     */
+    public com.lql.raft.rpc.proto.AppendEntriesResponse appendEntriesRequest(com.lql.raft.rpc.proto.AppendEntriesParam request) {
+      return blockingUnaryCall(
+          getChannel(), getAppendEntriesRequestMethod(), getCallOptions(), request);
     }
   }
 
@@ -196,9 +273,21 @@ public final class ConsistencyServiceGrpc {
       return futureUnaryCall(
           getChannel().newCall(getVoteRequestMethod(), getCallOptions()), request);
     }
+
+    /**
+     * <pre>
+     * 追加日志的rpc接口
+     * </pre>
+     */
+    public com.google.common.util.concurrent.ListenableFuture<com.lql.raft.rpc.proto.AppendEntriesResponse> appendEntriesRequest(
+        com.lql.raft.rpc.proto.AppendEntriesParam request) {
+      return futureUnaryCall(
+          getChannel().newCall(getAppendEntriesRequestMethod(), getCallOptions()), request);
+    }
   }
 
   private static final int METHODID_VOTE_REQUEST = 0;
+  private static final int METHODID_APPEND_ENTRIES_REQUEST = 1;
 
   private static final class MethodHandlers<Req, Resp> implements
       io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
@@ -220,6 +309,10 @@ public final class ConsistencyServiceGrpc {
         case METHODID_VOTE_REQUEST:
           serviceImpl.voteRequest((com.lql.raft.rpc.proto.VoteParam) request,
               (io.grpc.stub.StreamObserver<com.lql.raft.rpc.proto.VoteResponse>) responseObserver);
+          break;
+        case METHODID_APPEND_ENTRIES_REQUEST:
+          serviceImpl.appendEntriesRequest((com.lql.raft.rpc.proto.AppendEntriesParam) request,
+              (io.grpc.stub.StreamObserver<com.lql.raft.rpc.proto.AppendEntriesResponse>) responseObserver);
           break;
         default:
           throw new AssertionError();
@@ -283,6 +376,7 @@ public final class ConsistencyServiceGrpc {
           serviceDescriptor = result = io.grpc.ServiceDescriptor.newBuilder(SERVICE_NAME)
               .setSchemaDescriptor(new ConsistencyServiceFileDescriptorSupplier())
               .addMethod(getVoteRequestMethod())
+              .addMethod(getAppendEntriesRequestMethod())
               .build();
         }
       }
