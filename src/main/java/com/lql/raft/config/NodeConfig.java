@@ -1,7 +1,7 @@
 package com.lql.raft.config;
 
 import com.lql.raft.entity.Peer;
-import lombok.Data;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,7 +16,7 @@ import java.util.Set;
  * @author lql
  * @date 2024/03/14
  */
-@Data
+@Setter
 @Configuration
 public class NodeConfig {
     @Value("${server.port}")
@@ -41,5 +41,13 @@ public class NodeConfig {
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public Set<Peer> getPeerSet() {
+        return peerSet;
     }
 }
