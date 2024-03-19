@@ -24,6 +24,26 @@ public final class NodeProto {
   static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_VoteResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_AppendEntriesParam_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_AppendEntriesParam_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_AppendEntriesResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_AppendEntriesResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_Log_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_Log_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_Operate_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_Operate_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -33,14 +53,22 @@ public final class NodeProto {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\nnode.proto\"k\n\tVoteParam\022\014\n\004term\030\001 \001(\003\022" +
-      "\020\n\010serverId\030\002 \001(\t\022\023\n\013candidateId\030\003 \001(\t\022\024" +
-      "\n\014lastLogIndex\030\004 \001(\003\022\023\n\013lastLogTerm\030\005 \001(" +
-      "\003\"1\n\014VoteResponse\022\014\n\004term\030\001 \001(\003\022\023\n\013voteG" +
-      "ranted\030\002 \001(\0102@\n\022ConsistencyService\022*\n\013vo" +
-      "teRequest\022\n.VoteParam\032\r.VoteResponse\"\000B%" +
-      "\n\026com.lql.raft.rpc.protoB\tNodeProtoP\001b\006p" +
-      "roto3"
+      "\n\nnode.proto\"Y\n\tVoteParam\022\014\n\004term\030\001 \001(\003\022" +
+      "\023\n\013candidateId\030\002 \001(\t\022\024\n\014lastLogIndex\030\003 \001" +
+      "(\003\022\023\n\013lastLogTerm\030\004 \001(\003\"1\n\014VoteResponse\022" +
+      "\014\n\004term\030\001 \001(\003\022\023\n\013voteGranted\030\002 \001(\010\"\212\001\n\022A" +
+      "ppendEntriesParam\022\014\n\004term\030\001 \001(\003\022\020\n\010leade" +
+      "rId\030\002 \001(\t\022\023\n\013preLogIndex\030\003 \001(\003\022\022\n\npreLog" +
+      "Term\030\004 \001(\003\022\025\n\007entries\030\005 \003(\0132\004.Log\022\024\n\014lea" +
+      "derCommit\030\006 \001(\003\"6\n\025AppendEntriesResponse" +
+      "\022\014\n\004term\030\001 \001(\003\022\017\n\007success\030\002 \001(\010\"=\n\003Log\022\r" +
+      "\n\005index\030\001 \001(\003\022\014\n\004term\030\002 \001(\003\022\031\n\007operate\030\003" +
+      " \001(\0132\010.Operate\"%\n\007Operate\022\013\n\003key\030\001 \001(\t\022\r" +
+      "\n\005value\030\002 \001(\t2\207\001\n\022ConsistencyService\022*\n\013" +
+      "voteRequest\022\n.VoteParam\032\r.VoteResponse\"\000" +
+      "\022E\n\024AppendEntriesRequest\022\023.AppendEntries" +
+      "Param\032\026.AppendEntriesResponse\"\000B%\n\026com.l" +
+      "ql.raft.rpc.protoB\tNodeProtoP\001b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -51,13 +79,37 @@ public final class NodeProto {
     internal_static_VoteParam_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_VoteParam_descriptor,
-        new java.lang.String[] { "Term", "ServerId", "CandidateId", "LastLogIndex", "LastLogTerm", });
+        new java.lang.String[] { "Term", "CandidateId", "LastLogIndex", "LastLogTerm", });
     internal_static_VoteResponse_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_VoteResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_VoteResponse_descriptor,
         new java.lang.String[] { "Term", "VoteGranted", });
+    internal_static_AppendEntriesParam_descriptor =
+      getDescriptor().getMessageTypes().get(2);
+    internal_static_AppendEntriesParam_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_AppendEntriesParam_descriptor,
+        new java.lang.String[] { "Term", "LeaderId", "PreLogIndex", "PreLogTerm", "Entries", "LeaderCommit", });
+    internal_static_AppendEntriesResponse_descriptor =
+      getDescriptor().getMessageTypes().get(3);
+    internal_static_AppendEntriesResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_AppendEntriesResponse_descriptor,
+        new java.lang.String[] { "Term", "Success", });
+    internal_static_Log_descriptor =
+      getDescriptor().getMessageTypes().get(4);
+    internal_static_Log_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_Log_descriptor,
+        new java.lang.String[] { "Index", "Term", "Operate", });
+    internal_static_Operate_descriptor =
+      getDescriptor().getMessageTypes().get(5);
+    internal_static_Operate_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_Operate_descriptor,
+        new java.lang.String[] { "Key", "Value", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
