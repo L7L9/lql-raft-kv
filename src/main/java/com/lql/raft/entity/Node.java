@@ -2,8 +2,11 @@ package com.lql.raft.entity;
 
 import com.lql.raft.config.NodeConfig;
 import com.lql.raft.constant.NodeStatus;
-import com.lql.raft.rpc.ConsistencyService;
 import com.lql.raft.service.LogService;
+import com.lql.raft.thread.ThreadPoolFactory;
+import com.lql.raft.thread.task.ElectoralTask;
+import com.lql.raft.thread.task.HeartBeatTask;
+import com.lql.raft.utils.SpringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -80,12 +83,6 @@ public class Node {
      */
     private long lastResponseTime = 0L;
 
-    /**
-     * 一致性模块rpc接口
-     */
-    @Resource
-    private ConsistencyService consistencyService;
-
     @PostConstruct
     public void init(){
         // 1.初始化节点状态
@@ -96,9 +93,9 @@ public class Node {
         currentTerm = logEntity == null?0:logEntity.getTerm();
 
         // 3.开启定时心跳
-
+        ThreadPoolFactory.scheduleWithFixedDelay(SpringUtils.getBean(HeartBeatTask.class),500);
         // 4.开启超时检测,一段时间接收不到心跳后发起投票选举
-
+        ThreadPoolFactory.scheduleAtFixedRate(SpringUtils.getBean(ElectoralTask.class),6000,500);
 
         log.info("raft-node start success,node-address: {}",nodeConfig.getAddress());
     }
