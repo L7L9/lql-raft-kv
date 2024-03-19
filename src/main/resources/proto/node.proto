@@ -12,19 +12,19 @@ option java_outer_classname = "NodeProto";
 service ConsistencyService{
   // 请求投票选举的rpc接口
   rpc voteRequest(VoteParam) returns (VoteResponse){};
+  // 追加日志的rpc接口
+  rpc AppendEntriesRequest(AppendEntriesParam) returns(AppendEntriesResponse){};
 }
 
 message VoteParam{
   // 候选人的任期号
   int64 term = 1;
-  // 节点服务id(自定义)
-  string serverId = 2;
   // 请求选票的候选人id
-  string candidateId = 3;
+  string candidateId = 2;
   // 候选人最后日志条目的索引值
-  int64 lastLogIndex = 4;
+  int64 lastLogIndex = 3;
   // 候选人最后日志条目的任期号
-  int64 lastLogTerm = 5;
+  int64 lastLogTerm = 4;
 }
 
 message VoteResponse{
@@ -32,4 +32,29 @@ message VoteResponse{
   int64 term = 1;
   // 当候选人赢得该节点投票时为true
   bool voteGranted = 2;
+}
+
+message AppendEntriesParam{
+  int64 term = 1;
+  string leaderId = 2;
+  int64 preLogIndex = 3;
+  int64 preLogTerm = 4;
+  repeated Log entries = 5;
+  int64 leaderCommit = 6;
+}
+
+message AppendEntriesResponse{
+  int64 term = 1;
+  bool success = 2;
+}
+
+message Log{
+  int64 index = 1;
+  int64 term = 2;
+  Operate operate = 3;
+}
+
+message Operate{
+  string key = 1;
+  string value = 2;
 }
