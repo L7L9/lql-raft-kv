@@ -16,7 +16,6 @@ private static final long serialVersionUID = 0L;
     super(builder);
   }
   private VoteParam() {
-    serverId_ = "";
     candidateId_ = "";
   }
 
@@ -55,54 +54,7 @@ private static final long serialVersionUID = 0L;
     return term_;
   }
 
-  public static final int SERVERID_FIELD_NUMBER = 2;
-  @SuppressWarnings("serial")
-  private volatile java.lang.Object serverId_ = "";
-  /**
-   * <pre>
-   * 节点服务id(自定义)
-   * </pre>
-   *
-   * <code>string serverId = 2;</code>
-   * @return The serverId.
-   */
-  @java.lang.Override
-  public java.lang.String getServerId() {
-    java.lang.Object ref = serverId_;
-    if (ref instanceof java.lang.String) {
-      return (java.lang.String) ref;
-    } else {
-      com.google.protobuf.ByteString bs = 
-          (com.google.protobuf.ByteString) ref;
-      java.lang.String s = bs.toStringUtf8();
-      serverId_ = s;
-      return s;
-    }
-  }
-  /**
-   * <pre>
-   * 节点服务id(自定义)
-   * </pre>
-   *
-   * <code>string serverId = 2;</code>
-   * @return The bytes for serverId.
-   */
-  @java.lang.Override
-  public com.google.protobuf.ByteString
-      getServerIdBytes() {
-    java.lang.Object ref = serverId_;
-    if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
-          com.google.protobuf.ByteString.copyFromUtf8(
-              (java.lang.String) ref);
-      serverId_ = b;
-      return b;
-    } else {
-      return (com.google.protobuf.ByteString) ref;
-    }
-  }
-
-  public static final int CANDIDATEID_FIELD_NUMBER = 3;
+  public static final int CANDIDATEID_FIELD_NUMBER = 2;
   @SuppressWarnings("serial")
   private volatile java.lang.Object candidateId_ = "";
   /**
@@ -110,7 +62,7 @@ private static final long serialVersionUID = 0L;
    * 请求选票的候选人id
    * </pre>
    *
-   * <code>string candidateId = 3;</code>
+   * <code>string candidateId = 2;</code>
    * @return The candidateId.
    */
   @java.lang.Override
@@ -131,7 +83,7 @@ private static final long serialVersionUID = 0L;
    * 请求选票的候选人id
    * </pre>
    *
-   * <code>string candidateId = 3;</code>
+   * <code>string candidateId = 2;</code>
    * @return The bytes for candidateId.
    */
   @java.lang.Override
@@ -149,14 +101,14 @@ private static final long serialVersionUID = 0L;
     }
   }
 
-  public static final int LASTLOGINDEX_FIELD_NUMBER = 4;
+  public static final int LASTLOGINDEX_FIELD_NUMBER = 3;
   private long lastLogIndex_ = 0L;
   /**
    * <pre>
    * 候选人最后日志条目的索引值
    * </pre>
    *
-   * <code>int64 lastLogIndex = 4;</code>
+   * <code>int64 lastLogIndex = 3;</code>
    * @return The lastLogIndex.
    */
   @java.lang.Override
@@ -164,14 +116,14 @@ private static final long serialVersionUID = 0L;
     return lastLogIndex_;
   }
 
-  public static final int LASTLOGTERM_FIELD_NUMBER = 5;
+  public static final int LASTLOGTERM_FIELD_NUMBER = 4;
   private long lastLogTerm_ = 0L;
   /**
    * <pre>
    * 候选人最后日志条目的任期号
    * </pre>
    *
-   * <code>int64 lastLogTerm = 5;</code>
+   * <code>int64 lastLogTerm = 4;</code>
    * @return The lastLogTerm.
    */
   @java.lang.Override
@@ -196,17 +148,14 @@ private static final long serialVersionUID = 0L;
     if (term_ != 0L) {
       output.writeInt64(1, term_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(serverId_)) {
-      com.google.protobuf.GeneratedMessageV3.writeString(output, 2, serverId_);
-    }
     if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(candidateId_)) {
-      com.google.protobuf.GeneratedMessageV3.writeString(output, 3, candidateId_);
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 2, candidateId_);
     }
     if (lastLogIndex_ != 0L) {
-      output.writeInt64(4, lastLogIndex_);
+      output.writeInt64(3, lastLogIndex_);
     }
     if (lastLogTerm_ != 0L) {
-      output.writeInt64(5, lastLogTerm_);
+      output.writeInt64(4, lastLogTerm_);
     }
     getUnknownFields().writeTo(output);
   }
@@ -221,19 +170,16 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.CodedOutputStream
         .computeInt64Size(1, term_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(serverId_)) {
-      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, serverId_);
-    }
     if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(candidateId_)) {
-      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, candidateId_);
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, candidateId_);
     }
     if (lastLogIndex_ != 0L) {
       size += com.google.protobuf.CodedOutputStream
-        .computeInt64Size(4, lastLogIndex_);
+        .computeInt64Size(3, lastLogIndex_);
     }
     if (lastLogTerm_ != 0L) {
       size += com.google.protobuf.CodedOutputStream
-        .computeInt64Size(5, lastLogTerm_);
+        .computeInt64Size(4, lastLogTerm_);
     }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
@@ -252,8 +198,6 @@ private static final long serialVersionUID = 0L;
 
     if (getTerm()
         != other.getTerm()) return false;
-    if (!getServerId()
-        .equals(other.getServerId())) return false;
     if (!getCandidateId()
         .equals(other.getCandidateId())) return false;
     if (getLastLogIndex()
@@ -274,8 +218,6 @@ private static final long serialVersionUID = 0L;
     hash = (37 * hash) + TERM_FIELD_NUMBER;
     hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
         getTerm());
-    hash = (37 * hash) + SERVERID_FIELD_NUMBER;
-    hash = (53 * hash) + getServerId().hashCode();
     hash = (37 * hash) + CANDIDATEID_FIELD_NUMBER;
     hash = (53 * hash) + getCandidateId().hashCode();
     hash = (37 * hash) + LASTLOGINDEX_FIELD_NUMBER;
@@ -416,7 +358,6 @@ private static final long serialVersionUID = 0L;
       super.clear();
       bitField0_ = 0;
       term_ = 0L;
-      serverId_ = "";
       candidateId_ = "";
       lastLogIndex_ = 0L;
       lastLogTerm_ = 0L;
@@ -457,15 +398,12 @@ private static final long serialVersionUID = 0L;
         result.term_ = term_;
       }
       if (((from_bitField0_ & 0x00000002) != 0)) {
-        result.serverId_ = serverId_;
-      }
-      if (((from_bitField0_ & 0x00000004) != 0)) {
         result.candidateId_ = candidateId_;
       }
-      if (((from_bitField0_ & 0x00000008) != 0)) {
+      if (((from_bitField0_ & 0x00000004) != 0)) {
         result.lastLogIndex_ = lastLogIndex_;
       }
-      if (((from_bitField0_ & 0x00000010) != 0)) {
+      if (((from_bitField0_ & 0x00000008) != 0)) {
         result.lastLogTerm_ = lastLogTerm_;
       }
     }
@@ -517,14 +455,9 @@ private static final long serialVersionUID = 0L;
       if (other.getTerm() != 0L) {
         setTerm(other.getTerm());
       }
-      if (!other.getServerId().isEmpty()) {
-        serverId_ = other.serverId_;
-        bitField0_ |= 0x00000002;
-        onChanged();
-      }
       if (!other.getCandidateId().isEmpty()) {
         candidateId_ = other.candidateId_;
-        bitField0_ |= 0x00000004;
+        bitField0_ |= 0x00000002;
         onChanged();
       }
       if (other.getLastLogIndex() != 0L) {
@@ -565,25 +498,20 @@ private static final long serialVersionUID = 0L;
               break;
             } // case 8
             case 18: {
-              serverId_ = input.readStringRequireUtf8();
+              candidateId_ = input.readStringRequireUtf8();
               bitField0_ |= 0x00000002;
               break;
             } // case 18
-            case 26: {
-              candidateId_ = input.readStringRequireUtf8();
+            case 24: {
+              lastLogIndex_ = input.readInt64();
               bitField0_ |= 0x00000004;
               break;
-            } // case 26
+            } // case 24
             case 32: {
-              lastLogIndex_ = input.readInt64();
+              lastLogTerm_ = input.readInt64();
               bitField0_ |= 0x00000008;
               break;
             } // case 32
-            case 40: {
-              lastLogTerm_ = input.readInt64();
-              bitField0_ |= 0x00000010;
-              break;
-            } // case 40
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -645,105 +573,13 @@ private static final long serialVersionUID = 0L;
       return this;
     }
 
-    private java.lang.Object serverId_ = "";
-    /**
-     * <pre>
-     * 节点服务id(自定义)
-     * </pre>
-     *
-     * <code>string serverId = 2;</code>
-     * @return The serverId.
-     */
-    public java.lang.String getServerId() {
-      java.lang.Object ref = serverId_;
-      if (!(ref instanceof java.lang.String)) {
-        com.google.protobuf.ByteString bs =
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        serverId_ = s;
-        return s;
-      } else {
-        return (java.lang.String) ref;
-      }
-    }
-    /**
-     * <pre>
-     * 节点服务id(自定义)
-     * </pre>
-     *
-     * <code>string serverId = 2;</code>
-     * @return The bytes for serverId.
-     */
-    public com.google.protobuf.ByteString
-        getServerIdBytes() {
-      java.lang.Object ref = serverId_;
-      if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        serverId_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-    /**
-     * <pre>
-     * 节点服务id(自定义)
-     * </pre>
-     *
-     * <code>string serverId = 2;</code>
-     * @param value The serverId to set.
-     * @return This builder for chaining.
-     */
-    public Builder setServerId(
-        java.lang.String value) {
-      if (value == null) { throw new NullPointerException(); }
-      serverId_ = value;
-      bitField0_ |= 0x00000002;
-      onChanged();
-      return this;
-    }
-    /**
-     * <pre>
-     * 节点服务id(自定义)
-     * </pre>
-     *
-     * <code>string serverId = 2;</code>
-     * @return This builder for chaining.
-     */
-    public Builder clearServerId() {
-      serverId_ = getDefaultInstance().getServerId();
-      bitField0_ = (bitField0_ & ~0x00000002);
-      onChanged();
-      return this;
-    }
-    /**
-     * <pre>
-     * 节点服务id(自定义)
-     * </pre>
-     *
-     * <code>string serverId = 2;</code>
-     * @param value The bytes for serverId to set.
-     * @return This builder for chaining.
-     */
-    public Builder setServerIdBytes(
-        com.google.protobuf.ByteString value) {
-      if (value == null) { throw new NullPointerException(); }
-      checkByteStringIsUtf8(value);
-      serverId_ = value;
-      bitField0_ |= 0x00000002;
-      onChanged();
-      return this;
-    }
-
     private java.lang.Object candidateId_ = "";
     /**
      * <pre>
      * 请求选票的候选人id
      * </pre>
      *
-     * <code>string candidateId = 3;</code>
+     * <code>string candidateId = 2;</code>
      * @return The candidateId.
      */
     public java.lang.String getCandidateId() {
@@ -763,7 +599,7 @@ private static final long serialVersionUID = 0L;
      * 请求选票的候选人id
      * </pre>
      *
-     * <code>string candidateId = 3;</code>
+     * <code>string candidateId = 2;</code>
      * @return The bytes for candidateId.
      */
     public com.google.protobuf.ByteString
@@ -784,7 +620,7 @@ private static final long serialVersionUID = 0L;
      * 请求选票的候选人id
      * </pre>
      *
-     * <code>string candidateId = 3;</code>
+     * <code>string candidateId = 2;</code>
      * @param value The candidateId to set.
      * @return This builder for chaining.
      */
@@ -792,7 +628,7 @@ private static final long serialVersionUID = 0L;
         java.lang.String value) {
       if (value == null) { throw new NullPointerException(); }
       candidateId_ = value;
-      bitField0_ |= 0x00000004;
+      bitField0_ |= 0x00000002;
       onChanged();
       return this;
     }
@@ -801,12 +637,12 @@ private static final long serialVersionUID = 0L;
      * 请求选票的候选人id
      * </pre>
      *
-     * <code>string candidateId = 3;</code>
+     * <code>string candidateId = 2;</code>
      * @return This builder for chaining.
      */
     public Builder clearCandidateId() {
       candidateId_ = getDefaultInstance().getCandidateId();
-      bitField0_ = (bitField0_ & ~0x00000004);
+      bitField0_ = (bitField0_ & ~0x00000002);
       onChanged();
       return this;
     }
@@ -815,7 +651,7 @@ private static final long serialVersionUID = 0L;
      * 请求选票的候选人id
      * </pre>
      *
-     * <code>string candidateId = 3;</code>
+     * <code>string candidateId = 2;</code>
      * @param value The bytes for candidateId to set.
      * @return This builder for chaining.
      */
@@ -824,7 +660,7 @@ private static final long serialVersionUID = 0L;
       if (value == null) { throw new NullPointerException(); }
       checkByteStringIsUtf8(value);
       candidateId_ = value;
-      bitField0_ |= 0x00000004;
+      bitField0_ |= 0x00000002;
       onChanged();
       return this;
     }
@@ -835,7 +671,7 @@ private static final long serialVersionUID = 0L;
      * 候选人最后日志条目的索引值
      * </pre>
      *
-     * <code>int64 lastLogIndex = 4;</code>
+     * <code>int64 lastLogIndex = 3;</code>
      * @return The lastLogIndex.
      */
     @java.lang.Override
@@ -847,14 +683,14 @@ private static final long serialVersionUID = 0L;
      * 候选人最后日志条目的索引值
      * </pre>
      *
-     * <code>int64 lastLogIndex = 4;</code>
+     * <code>int64 lastLogIndex = 3;</code>
      * @param value The lastLogIndex to set.
      * @return This builder for chaining.
      */
     public Builder setLastLogIndex(long value) {
 
       lastLogIndex_ = value;
-      bitField0_ |= 0x00000008;
+      bitField0_ |= 0x00000004;
       onChanged();
       return this;
     }
@@ -863,11 +699,11 @@ private static final long serialVersionUID = 0L;
      * 候选人最后日志条目的索引值
      * </pre>
      *
-     * <code>int64 lastLogIndex = 4;</code>
+     * <code>int64 lastLogIndex = 3;</code>
      * @return This builder for chaining.
      */
     public Builder clearLastLogIndex() {
-      bitField0_ = (bitField0_ & ~0x00000008);
+      bitField0_ = (bitField0_ & ~0x00000004);
       lastLogIndex_ = 0L;
       onChanged();
       return this;
@@ -879,7 +715,7 @@ private static final long serialVersionUID = 0L;
      * 候选人最后日志条目的任期号
      * </pre>
      *
-     * <code>int64 lastLogTerm = 5;</code>
+     * <code>int64 lastLogTerm = 4;</code>
      * @return The lastLogTerm.
      */
     @java.lang.Override
@@ -891,14 +727,14 @@ private static final long serialVersionUID = 0L;
      * 候选人最后日志条目的任期号
      * </pre>
      *
-     * <code>int64 lastLogTerm = 5;</code>
+     * <code>int64 lastLogTerm = 4;</code>
      * @param value The lastLogTerm to set.
      * @return This builder for chaining.
      */
     public Builder setLastLogTerm(long value) {
 
       lastLogTerm_ = value;
-      bitField0_ |= 0x00000010;
+      bitField0_ |= 0x00000008;
       onChanged();
       return this;
     }
@@ -907,11 +743,11 @@ private static final long serialVersionUID = 0L;
      * 候选人最后日志条目的任期号
      * </pre>
      *
-     * <code>int64 lastLogTerm = 5;</code>
+     * <code>int64 lastLogTerm = 4;</code>
      * @return This builder for chaining.
      */
     public Builder clearLastLogTerm() {
-      bitField0_ = (bitField0_ & ~0x00000010);
+      bitField0_ = (bitField0_ & ~0x00000008);
       lastLogTerm_ = 0L;
       onChanged();
       return this;

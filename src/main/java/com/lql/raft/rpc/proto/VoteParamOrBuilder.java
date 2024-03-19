@@ -19,30 +19,10 @@ public interface VoteParamOrBuilder extends
 
   /**
    * <pre>
-   * 节点服务id(自定义)
-   * </pre>
-   *
-   * <code>string serverId = 2;</code>
-   * @return The serverId.
-   */
-  java.lang.String getServerId();
-  /**
-   * <pre>
-   * 节点服务id(自定义)
-   * </pre>
-   *
-   * <code>string serverId = 2;</code>
-   * @return The bytes for serverId.
-   */
-  com.google.protobuf.ByteString
-      getServerIdBytes();
-
-  /**
-   * <pre>
    * 请求选票的候选人id
    * </pre>
    *
-   * <code>string candidateId = 3;</code>
+   * <code>string candidateId = 2;</code>
    * @return The candidateId.
    */
   java.lang.String getCandidateId();
@@ -51,7 +31,7 @@ public interface VoteParamOrBuilder extends
    * 请求选票的候选人id
    * </pre>
    *
-   * <code>string candidateId = 3;</code>
+   * <code>string candidateId = 2;</code>
    * @return The bytes for candidateId.
    */
   com.google.protobuf.ByteString
@@ -62,7 +42,7 @@ public interface VoteParamOrBuilder extends
    * 候选人最后日志条目的索引值
    * </pre>
    *
-   * <code>int64 lastLogIndex = 4;</code>
+   * <code>int64 lastLogIndex = 3;</code>
    * @return The lastLogIndex.
    */
   long getLastLogIndex();
@@ -72,7 +52,7 @@ public interface VoteParamOrBuilder extends
    * 候选人最后日志条目的任期号
    * </pre>
    *
-   * <code>int64 lastLogTerm = 5;</code>
+   * <code>int64 lastLogTerm = 4;</code>
    * @return The lastLogTerm.
    */
   long getLastLogTerm();
