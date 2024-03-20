@@ -8,6 +8,7 @@ import com.lql.raft.factory.GrpcServerFactory;
 import com.lql.raft.rpc.proto.AppendEntriesParam;
 import com.lql.raft.rpc.proto.AppendEntriesResponse;
 import com.lql.raft.thread.ThreadPoolFactory;
+import com.lql.raft.utils.StringUtils;
 import com.lql.raft.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -42,11 +43,11 @@ public class HeartBeatTask implements Runnable{
         if(node.getStatus() == NodeStatus.FOLLOW){
             return;
         }
-        if(TimeUtils.currentTime() - node.getLastResponseTime() < HEART_BEAT_TICK){
+        if(TimeUtils.currentTime() - node.getPreHeartBeatTime() < HEART_BEAT_TICK){
             return;
         }
 
-        node.setLastResponseTime(TimeUtils.currentTime());
+        node.setPreHeartBeatTime(TimeUtils.currentTime());
 
         for(Peer peer:nodeConfig.getPeerSet()){
             AppendEntriesParam param = AppendEntriesParam.newBuilder()
@@ -65,7 +66,7 @@ public class HeartBeatTask implements Runnable{
                     log.warn("node {} become follower,old term={},new term={}",nodeConfig.getAddress(),node.getCurrentTerm(),term);
                     node.setCurrentTerm(term);
                     node.setStatus(NodeStatus.FOLLOW);
-                    node.setVotedFor("");
+                    node.setVotedFor(StringUtils.EMPTY_STR);
                 }
             });
         }
