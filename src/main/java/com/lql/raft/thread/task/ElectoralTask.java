@@ -9,6 +9,7 @@ import com.lql.raft.rpc.proto.VoteParam;
 import com.lql.raft.rpc.proto.VoteResponse;
 import com.lql.raft.service.LogService;
 import com.lql.raft.thread.ThreadPoolFactory;
+import com.lql.raft.utils.StringUtils;
 import com.lql.raft.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -59,12 +60,12 @@ public class ElectoralTask implements Runnable{
 
         long current = TimeUtils.currentTime();
         // 判断时间间隔是否小于选举间隔时间
-        if(current - node.getLastResponseTime() < ELECTION_INTERVAL){
+        if(current - node.getPreElectionTime() < ELECTION_INTERVAL){
             return;
         }
         // 状态变为获选人
         node.setStatus(NodeStatus.CANDIDATE);
-        node.setLastResponseTime(TimeUtils.currentTime());
+        node.setPreElectionTime(TimeUtils.currentTime());
 
         node.setVotedFor(nodeConfig.getAddress());
         long currentTerm = node.getCurrentTerm() + 1;
@@ -121,7 +122,7 @@ public class ElectoralTask implements Runnable{
             // 阻塞等待上面线程处理完结果
             if(!countDownLatch.await(3000,TimeUnit.MILLISECONDS)){
                 log.error("some vote rpc response overtime");
-            };
+            }
         } catch (InterruptedException e) {
             log.error("countDownLatch InterruptedException: {}",e.getMessage());
         }
@@ -137,8 +138,8 @@ public class ElectoralTask implements Runnable{
             node.setStatus(NodeStatus.LEADER);
             afterBecomeLeader();
         }
-        node.setVotedFor("");
-        node.setLastResponseTime(TimeUtils.currentTime());
+        node.setVotedFor(StringUtils.EMPTY_STR);
+        node.setPreElectionTime(TimeUtils.currentTime());
     }
 
     /**
