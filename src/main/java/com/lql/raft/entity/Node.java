@@ -34,27 +34,27 @@ public class Node {
      * 非持久化属性：该节点已知的提交的最高日志条目的索引值
      * 初始值为0，单调递增
      */
-    private long commitIndex;
+    private volatile long commitIndex;
 
     /**
      * 非持久化属性：该节点已被应用到状态机中的日志条目的索引值
      * 初始值为0，单调递增
      */
-    private long lastApplied;
+    private volatile long lastApplied = 0;
 
     /**
      * 持久化属性：从数据库中读取
      * 服务器已知的最新的任期
      * 初始值为0
      */
-    private long currentTerm;
+    private volatile long currentTerm;
 
     /**
      * 持久化属性：从数据库中读取
      * 当前任期内收到选票的candidateId
      * 如果没有投给任何候选人则为空
      */
-    private String votedFor;
+    private volatile String votedFor;
 
     /**
      * 持久化属性：从数据库中读取
@@ -79,9 +79,14 @@ public class Node {
     private Map<Peer,Long> matchIndex;
 
     /**
-     * 上次响应其他节点和选举的时间戳
+     * 上次选举的时间戳
      */
-    private long lastResponseTime = 0L;
+    private volatile long preElectionTime = 0L;
+
+    /**
+     * 上次心跳的时间戳
+     */
+    private volatile long preHeartBeatTime = 0L;
 
     @PostConstruct
     public void init(){
@@ -156,11 +161,19 @@ public class Node {
         this.matchIndex = matchIndex;
     }
 
-    public long getLastResponseTime() {
-        return lastResponseTime;
+    public long getPreElectionTime() {
+        return preElectionTime;
     }
 
-    public void setLastResponseTime(long lastResponseTime) {
-        this.lastResponseTime = lastResponseTime;
+    public void setPreElectionTime(long preElectionTime) {
+        this.preElectionTime = preElectionTime;
+    }
+
+    public long getPreHeartBeatTime() {
+        return preHeartBeatTime;
+    }
+
+    public void setPreHeartBeatTime(long preHeartBeatTime) {
+        this.preHeartBeatTime = preHeartBeatTime;
     }
 }
