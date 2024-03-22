@@ -2,6 +2,8 @@ package com.lql.raft.service;
 
 import com.lql.raft.entity.LogEntity;
 
+import java.util.concurrent.Future;
+
 /**
  * 日志模块服务接口
  *
@@ -33,4 +35,17 @@ public interface LogService {
      * @return 索引值，没有返回-1
      */
     Long getLastIndex();
+
+    /**
+     * 删除对应索引的条目
+     * @param index 索引值
+     */
+    void delete(Long index);
+
+    /**
+     * 日志复制
+     * @param logEntity 日志
+     * @return 成功返回true
+     */
+    Future<Boolean> replication(LogEntity logEntity);
 }

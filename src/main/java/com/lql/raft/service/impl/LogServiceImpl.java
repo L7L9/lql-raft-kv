@@ -15,6 +15,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import java.io.File;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -41,6 +42,9 @@ public class LogServiceImpl implements LogService {
      */
     private final static int LOCK_TTL = 5000;
 
+    /**
+     * 写删锁，防止同时写和删除
+     */
     private final ReentrantLock lock = new ReentrantLock();
 
     @Resource
@@ -129,5 +133,19 @@ public class LogServiceImpl implements LogService {
             throw new RuntimeException(e);
         }
         return lastIndex;
+    }
+
+    @Override
+    public void delete(Long index) {
+        try {
+            logDb.delete(index.toString().getBytes());
+        } catch (RocksDBException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Future<Boolean> replication(LogEntity logEntity) {
+        return null;
     }
 }
