@@ -1,9 +1,0 @@
-server:
-  port: 8300
-node:
-  cluster:
-    address:
-      -
-grpc:
-  server:
-    port:
