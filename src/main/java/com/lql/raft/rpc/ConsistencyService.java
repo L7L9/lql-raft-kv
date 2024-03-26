@@ -1,18 +1,17 @@
 package com.lql.raft.rpc;
 
-import com.lql.raft.config.NodeConfig;
 import com.lql.raft.constant.NodeStatus;
 import com.lql.raft.entity.LogEntity;
 import com.lql.raft.entity.Node;
 import com.lql.raft.entity.Operation;
 import com.lql.raft.rpc.proto.*;
 import com.lql.raft.service.LogService;
+import com.lql.raft.service.impl.LogServiceImpl;
 import com.lql.raft.utils.StringUtils;
 import com.lql.raft.utils.TimeUtils;
 import io.grpc.stub.StreamObserver;
-import net.devh.boot.grpc.server.service.GrpcService;
+import lombok.extern.slf4j.Slf4j;
 
-import javax.annotation.Resource;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
@@ -23,13 +22,16 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author lql
  * @date 2024/01/18
  */
-@GrpcService
+@Slf4j
 public class ConsistencyService extends ConsistencyServiceGrpc.ConsistencyServiceImplBase {
-    @Resource
-    private Node node;
+    private final Node node;
 
-    @Resource
-    private LogService logService;
+    private final LogService logService;
+
+    public ConsistencyService(Node node){
+        this.node = node;
+        logService = LogServiceImpl.getInstance();
+    }
 
     /**
      * 投票请求锁
@@ -46,6 +48,7 @@ public class ConsistencyService extends ConsistencyServiceGrpc.ConsistencyServic
     @Override
     public void voteRequest(VoteParam request, StreamObserver<VoteResponse> responseObserver) {
         VoteResponse.Builder response = VoteResponse.newBuilder().setVoteGranted(false);
+        log.info("asdasdasdasdasdasd");
         try {
             if (voteLock.tryLock()) {
                 // 判断当前节点是否任期比他新
@@ -65,10 +68,8 @@ public class ConsistencyService extends ConsistencyServiceGrpc.ConsistencyServic
                     node.setCurrentTerm(request.getTerm());
 
                     response.setVoteGranted(true).setTerm(node.getCurrentTerm());
-                    return;
                 }
             }
-            responseObserver.onNext(response.build());
         } finally {
             responseObserver.onNext(response.build());
             responseObserver.onCompleted();
@@ -100,6 +101,7 @@ public class ConsistencyService extends ConsistencyServiceGrpc.ConsistencyServic
             // 判断是否为心跳,为心跳则没有携带新日志
             if(request.getEntriesCount() == 0){
                 // TODO
+                log.info("node receive heart beat,address: {},from address: {}",node.getNodeConfig().getAddress(),request.getLeaderId());
                 response.setTerm(node.getCurrentTerm());
                 return;
             }

@@ -1,6 +1,5 @@
 package com.lql.raft.thread.task;
 
-import com.lql.raft.config.NodeConfig;
 import com.lql.raft.constant.NodeStatus;
 import com.lql.raft.entity.Node;
 import com.lql.raft.entity.Peer;
@@ -8,13 +7,12 @@ import com.lql.raft.factory.GrpcServerFactory;
 import com.lql.raft.rpc.proto.VoteParam;
 import com.lql.raft.rpc.proto.VoteResponse;
 import com.lql.raft.service.LogService;
+import com.lql.raft.service.impl.LogServiceImpl;
 import com.lql.raft.thread.ThreadPoolFactory;
 import com.lql.raft.utils.StringUtils;
 import com.lql.raft.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -30,27 +28,22 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2024/03/16
  */
 @Slf4j
-@Component
 public class ElectoralTask implements Runnable{
     /**
      * 获取node节点信息
      */
-    @Resource
-    private Node node;
+    private final Node node;
 
-    /**
-     * node配置
-     */
-    @Resource
-    private NodeConfig nodeConfig;
-
-    @Resource
-    private LogService logService;
+    private final LogService logService = LogServiceImpl.getInstance();
 
     /**
      * 选举间隔时间
      */
     private final static long ELECTION_INTERVAL = 20 * 1000;
+
+    public ElectoralTask(Node node){
+        this.node = node;
+    }
 
     @Override
     public void run() {
@@ -67,23 +60,25 @@ public class ElectoralTask implements Runnable{
         node.setStatus(NodeStatus.CANDIDATE);
         node.setPreElectionTime(TimeUtils.currentTime());
 
-        node.setVotedFor(nodeConfig.getAddress());
+        node.setVotedFor(node.getNodeConfig().getAddress());
         long currentTerm = node.getCurrentTerm() + 1;
         node.setCurrentTerm(currentTerm);
 
         // 用于接收调用结果
         List<Future<VoteResponse>> futureList = new ArrayList<>();
+        GrpcServerFactory factory = GrpcServerFactory.getInstance();
         // 遍历同伴节点并且发送请求投票rpc
-        for(Peer peer : nodeConfig.getPeerSet()){
+        for(Peer peer : node.getNodeConfig().getPeerSet()){
             Future<VoteResponse> result = ThreadPoolFactory.submit(() -> {
                 // 发送投票rpc
                 VoteParam voteParam = VoteParam.newBuilder()
-                        .setCandidateId(nodeConfig.getAddress())
+                        .setCandidateId(node.getNodeConfig().getAddress())
                         .setTerm(currentTerm)
                         .setLastLogIndex(logService.getLastIndex())
                         .setLastLogTerm(logService.getLast().getTerm()).build();
 
-                return GrpcServerFactory.getConsistencyServiceBlockingStub(peer.getAddr()).voteRequest(voteParam);
+                VoteResponse voteResponse = factory.getConsistencyServiceBlockingStub(peer.getAddr()).voteRequest(voteParam);
+                return voteResponse;
             });
             futureList.add(result);
         }
@@ -91,7 +86,7 @@ public class ElectoralTask implements Runnable{
         // 用于记录投票给自己的节点个数
         AtomicInteger count = new AtomicInteger(0);
         // 用于等待所有线程处理完成
-        CountDownLatch countDownLatch = new CountDownLatch(nodeConfig.getPeerSet().size());
+        CountDownLatch countDownLatch = new CountDownLatch(node.getNodeConfig().getPeerSet().size());
         // 接收结果并且处理
         for(Future<VoteResponse> result: futureList){
             ThreadPoolFactory.execute(()->{
@@ -133,8 +128,8 @@ public class ElectoralTask implements Runnable{
 
         int voteCount = count.get();
         // 投票总数大于等于所有节点数量的一半即转变为leader
-        if(voteCount >= (nodeConfig.getPeerSet().size() + 1) / 2){
-            log.info("new node become leader,address: {}",nodeConfig.getAddress());
+        if(voteCount >= (node.getNodeConfig().getPeerSet().size() + 1) / 2){
+            log.info("new node become leader,address: {}",node.getNodeConfig().getAddress());
             node.setStatus(NodeStatus.LEADER);
             afterBecomeLeader();
         }
@@ -146,11 +141,11 @@ public class ElectoralTask implements Runnable{
      * 成为leader后节点需要更新的事务
      */
     private void afterBecomeLeader(){
-        int size = nodeConfig.getPeerSet().size();
+        int size = node.getNodeConfig().getPeerSet().size();
         node.setNextIndex(new ConcurrentHashMap<>(size));
         node.setMatchIndex(new ConcurrentHashMap<>(size));
 
-        for(Peer peer:nodeConfig.getPeerSet()){
+        for(Peer peer:node.getNodeConfig().getPeerSet()){
             node.getNextIndex().put(peer, logService.getLastIndex() + 1);
             node.getMatchIndex().put(peer,0L);
         }

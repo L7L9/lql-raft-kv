@@ -7,11 +7,7 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -22,25 +18,34 @@ import java.util.HashMap;
  * @date 2024/03/17
  */
 @Slf4j
-@Component
 public class GrpcServerFactory {
-    @Value("${grpc.server.port}")
-    private int grpcPort;
+    private HashMap<String,ConsistencyServiceGrpc.ConsistencyServiceBlockingStub>  stubMap = new HashMap<>();
 
-    @Resource
-    private ConsistencyService consistencyService;
+    private GrpcServerFactory(){
+    }
 
-    private static HashMap<String,ConsistencyServiceGrpc.ConsistencyServiceBlockingStub>  stubMap = new HashMap<>();
+    private static volatile GrpcServerFactory instance;
+
+    public static GrpcServerFactory getInstance(){
+        if(instance == null){
+            synchronized (GrpcServerFactory.class){
+                if(instance == null){
+                    instance = new GrpcServerFactory();
+                }
+            }
+        }
+
+        return instance;
+    }
 
     /**
      * 开启当前节点的grpc服务
      * @throws IOException 异常
      */
-    @PostConstruct
-    public void startServer() throws IOException {
-        Server server = ServerBuilder.forPort(grpcPort).addService(consistencyService).build();
+    public void initAndStart(int port,ConsistencyService consistencyService) throws IOException {
+        Server server = ServerBuilder.forPort(port).addService(consistencyService).build();
         server.start();
-        log.info("grpc server start success,port: {}",grpcPort);
+        log.info("grpc server start success,port: {}",port);
     }
 
     /**
@@ -48,7 +53,7 @@ public class GrpcServerFactory {
      * @param address 节点地址
      * @return rpc stub
      */
-    public static ConsistencyServiceGrpc.ConsistencyServiceBlockingStub getConsistencyServiceBlockingStub(String address){
+    public ConsistencyServiceGrpc.ConsistencyServiceBlockingStub getConsistencyServiceBlockingStub(String address){
         if(!stubMap.containsKey(address)){
             ManagedChannel managedChannel = ManagedChannelBuilder.forTarget(address)
                     .usePlaintext()

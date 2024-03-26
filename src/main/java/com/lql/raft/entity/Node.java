@@ -3,15 +3,13 @@ package com.lql.raft.entity;
 import com.lql.raft.config.NodeConfig;
 import com.lql.raft.constant.NodeStatus;
 import com.lql.raft.service.LogService;
+import com.lql.raft.service.impl.LogServiceImpl;
 import com.lql.raft.thread.ThreadPoolFactory;
 import com.lql.raft.thread.task.ElectoralTask;
 import com.lql.raft.thread.task.HeartBeatTask;
-import com.lql.raft.utils.SpringUtils;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import java.util.Map;
 
 /**
@@ -20,9 +18,11 @@ import java.util.Map;
  * @date 2024/01/09
  */
 @Slf4j
-@Component
+@Data
 public class Node {
-    @Resource
+    /**
+     * 节点配置
+     */
     private NodeConfig nodeConfig;
 
     /**
@@ -61,7 +61,6 @@ public class Node {
      * 日志条目：每个条目包含了用于状态机的命令，以及领导人接收到该条目的时候的任期
      * 初始索引为1
      */
-    @Resource
     private LogService logService;
 
     /**
@@ -88,92 +87,20 @@ public class Node {
      */
     private volatile long preHeartBeatTime = 0L;
 
-    @PostConstruct
     public void init(){
         // 1.初始化节点状态
         status = NodeStatus.FOLLOW;
 
         // 2.获取持久化属性
+        logService = LogServiceImpl.getInstance();
         LogEntity logEntity = logService.getLast();
         currentTerm = logEntity == null?0:logEntity.getTerm();
 
         // 3.开启定时心跳
-        ThreadPoolFactory.scheduleWithFixedDelay(SpringUtils.getBean(HeartBeatTask.class),500);
+        ThreadPoolFactory.scheduleWithFixedDelay(new HeartBeatTask(this),500);
         // 4.开启超时检测,一段时间接收不到心跳后发起投票选举
-        ThreadPoolFactory.scheduleAtFixedRate(SpringUtils.getBean(ElectoralTask.class),6000,500);
+        ThreadPoolFactory.scheduleAtFixedRate(new ElectoralTask(this),6000,500);
 
         log.info("raft-node start success,node-address: {}",nodeConfig.getAddress());
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(int status) {
-        this.status = status;
-    }
-
-    public long getCommitIndex() {
-        return commitIndex;
-    }
-
-    public void setCommitIndex(long commitIndex) {
-        this.commitIndex = commitIndex;
-    }
-
-    public long getLastApplied() {
-        return lastApplied;
-    }
-
-    public void setLastApplied(long lastApplied) {
-        this.lastApplied = lastApplied;
-    }
-
-    public long getCurrentTerm() {
-        return currentTerm;
-    }
-
-    public void setCurrentTerm(long currentTerm) {
-        this.currentTerm = currentTerm;
-    }
-
-    public String getVotedFor() {
-        return votedFor;
-    }
-
-    public void setVotedFor(String votedFor) {
-        this.votedFor = votedFor;
-    }
-
-    public Map<Peer, Long> getNextIndex() {
-        return nextIndex;
-    }
-
-    public void setNextIndex(Map<Peer, Long> nextIndex) {
-        this.nextIndex = nextIndex;
-    }
-
-    public Map<Peer, Long> getMatchIndex() {
-        return matchIndex;
-    }
-
-    public void setMatchIndex(Map<Peer, Long> matchIndex) {
-        this.matchIndex = matchIndex;
-    }
-
-    public long getPreElectionTime() {
-        return preElectionTime;
-    }
-
-    public void setPreElectionTime(long preElectionTime) {
-        this.preElectionTime = preElectionTime;
-    }
-
-    public long getPreHeartBeatTime() {
-        return preHeartBeatTime;
-    }
-
-    public void setPreHeartBeatTime(long preHeartBeatTime) {
-        this.preHeartBeatTime = preHeartBeatTime;
     }
 }

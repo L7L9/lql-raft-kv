@@ -1,7 +1,6 @@
 package com.lql.raft.service.impl;
 
 import com.alibaba.fastjson2.JSON;
-import com.lql.raft.config.NodeConfig;
 import com.lql.raft.constant.DirConstants;
 import com.lql.raft.entity.LogEntity;
 import com.lql.raft.service.LogService;
@@ -9,11 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
-import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
 import java.io.File;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -25,17 +20,11 @@ import java.util.concurrent.locks.ReentrantLock;
  * @date 2024/03/14
  */
 @Slf4j
-@Service
 public class LogServiceImpl implements LogService {
     /**
      * 最后索引的key
      */
     private final static byte[] LAST_KEY = "last_key".getBytes();
-
-    /**
-     * 日志目录
-     */
-    private final static String LOG_DIR = "/log-data";
 
     /**
      * 锁的ttl
@@ -47,16 +36,28 @@ public class LogServiceImpl implements LogService {
      */
     private final ReentrantLock lock = new ReentrantLock();
 
-    @Resource
-    private NodeConfig nodeConfig;
-
     private RocksDB logDb;
 
-    @PostConstruct
-    public void init(){
+    private LogServiceImpl(){}
+
+    private static LogServiceImpl instance = new LogServiceImpl();
+
+    public static LogServiceImpl getInstance(){
+        if(instance == null){
+            synchronized (LogServiceImpl.class){
+                if(instance == null){
+                    instance = new LogServiceImpl();
+                }
+            }
+        }
+
+        return instance;
+    }
+
+    public void init(String port){
         // 初始化rocksdb
-        String databaseDir = DirConstants.ROOT_DIR + nodeConfig.getAddress();
-        String logDir = databaseDir + LOG_DIR;
+        String databaseDir = DirConstants.ROOT_DIR + port;
+        String logDir = databaseDir + "/log-data";
 
         RocksDB.loadLibrary();
         Options options = new Options();
@@ -69,13 +70,12 @@ public class LogServiceImpl implements LogService {
             }
         }
         try {
-            logDb = RocksDB.open(options,logDir);
+            this.logDb = RocksDB.open(options,logDir);
         } catch (RocksDBException e) {
             log.warn(e.getMessage());
         }
     }
 
-    @PreDestroy
     public void destroy(){
         // 关闭数据库
         logDb.close();

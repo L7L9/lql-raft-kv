@@ -1,6 +1,5 @@
 package com.lql.raft.thread.task;
 
-import com.lql.raft.config.NodeConfig;
 import com.lql.raft.constant.NodeStatus;
 import com.lql.raft.entity.Node;
 import com.lql.raft.entity.Peer;
@@ -11,9 +10,6 @@ import com.lql.raft.thread.ThreadPoolFactory;
 import com.lql.raft.utils.StringUtils;
 import com.lql.raft.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.Resource;
 
 /**
  * 心跳机制任务
@@ -22,7 +18,6 @@ import javax.annotation.Resource;
  * @date 2024/03/15
  */
 @Slf4j
-@Component
 public class HeartBeatTask implements Runnable{
     /**
      * 心跳间隔
@@ -32,11 +27,11 @@ public class HeartBeatTask implements Runnable{
     /**
      * 获取node节点信息
      */
-    @Resource
-    private Node node;
+    private final Node node;
 
-    @Resource
-    private NodeConfig nodeConfig;
+    public HeartBeatTask(Node node){
+        this.node = node;
+    }
 
     @Override
     public void run() {
@@ -48,22 +43,22 @@ public class HeartBeatTask implements Runnable{
         }
 
         node.setPreHeartBeatTime(TimeUtils.currentTime());
-
-        for(Peer peer:nodeConfig.getPeerSet()){
+        GrpcServerFactory factory = GrpcServerFactory.getInstance();
+        for(Peer peer:node.getNodeConfig().getPeerSet()){
             AppendEntriesParam param = AppendEntriesParam.newBuilder()
-                    .setLeaderId(nodeConfig.getAddress())
+                    .setLeaderId(node.getNodeConfig().getAddress())
                     .setTerm(node.getCurrentTerm())
                     .setLeaderCommit(node.getCommitIndex())
                     .build();
 
             ThreadPoolFactory.execute(()->{
-                AppendEntriesResponse appendEntriesResponse = GrpcServerFactory.getConsistencyServiceBlockingStub(peer.getAddr()).appendEntriesRequest(param);
+                AppendEntriesResponse appendEntriesResponse = factory.getConsistencyServiceBlockingStub(peer.getAddr()).appendEntriesRequest(param);
 
                 // 处理结果
                 long term = appendEntriesResponse.getTerm();
                 // 任期大于当前节点任期,说明已经不再是leader
                 if(term > node.getCurrentTerm()){
-                    log.warn("node {} become follower,old term={},new term={}",nodeConfig.getAddress(),node.getCurrentTerm(),term);
+                    log.warn("node {} become follower,old term={},new term={}",node.getNodeConfig().getAddress(),node.getCurrentTerm(),term);
                     node.setCurrentTerm(term);
                     node.setStatus(NodeStatus.FOLLOW);
                     node.setVotedFor(StringUtils.EMPTY_STR);
