@@ -87,8 +87,7 @@ public class ElectoralTask implements Runnable{
                 try{
                     voteResponse = factory.getConsistencyServiceBlockingStub(peer.getAddr()).voteRequest(voteParam);
                 } catch (StatusRuntimeException e){
-                    log.error("node breakdown address: {}",peer.getAddr());
-                    factory.removeBlockingStub(peer.getAddr());
+                    return null;
                 }
 
                 return voteResponse;

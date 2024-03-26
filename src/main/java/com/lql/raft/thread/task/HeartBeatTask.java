@@ -3,12 +3,13 @@ package com.lql.raft.thread.task;
 import com.lql.raft.constant.NodeStatus;
 import com.lql.raft.entity.Node;
 import com.lql.raft.entity.Peer;
-import com.lql.raft.factory.GrpcServerFactory;
+import com.lql.raft.manager.GrpcServerManager;
 import com.lql.raft.rpc.proto.AppendEntriesParam;
 import com.lql.raft.rpc.proto.AppendEntriesResponse;
 import com.lql.raft.thread.ThreadPoolFactory;
 import com.lql.raft.utils.StringUtils;
 import com.lql.raft.utils.TimeUtils;
+import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -43,7 +44,7 @@ public class HeartBeatTask implements Runnable{
         }
 
         node.setPreHeartBeatTime(TimeUtils.currentTime());
-        GrpcServerFactory factory = GrpcServerFactory.getInstance();
+        GrpcServerManager factory = GrpcServerManager.getInstance();
         for(Peer peer:node.getNodeConfig().getPeerSet()){
             AppendEntriesParam param = AppendEntriesParam.newBuilder()
                     .setLeaderId(node.getNodeConfig().getAddress())
@@ -52,16 +53,20 @@ public class HeartBeatTask implements Runnable{
                     .build();
 
             ThreadPoolFactory.execute(()->{
-                AppendEntriesResponse appendEntriesResponse = factory.getConsistencyServiceBlockingStub(peer.getAddr()).appendEntriesRequest(param);
+                try{
+                    AppendEntriesResponse appendEntriesResponse = factory.getConsistencyServiceBlockingStub(peer.getAddr()).appendEntriesRequest(param);
 
-                // 处理结果
-                long term = appendEntriesResponse.getTerm();
-                // 任期大于当前节点任期,说明已经不再是leader
-                if(term > node.getCurrentTerm()){
-                    log.warn("node {} become follower,old term={},new term={}",node.getNodeConfig().getAddress(),node.getCurrentTerm(),term);
-                    node.setCurrentTerm(term);
-                    node.setStatus(NodeStatus.FOLLOW);
-                    node.setVotedFor(StringUtils.EMPTY_STR);
+                    // 处理结果
+                    long term = appendEntriesResponse.getTerm();
+                    // 任期大于当前节点任期,说明已经不再是leader
+                    if(term > node.getCurrentTerm()){
+                        log.warn("node {} become follower,old term={},new term={}",node.getNodeConfig().getAddress(),node.getCurrentTerm(),term);
+                        node.setCurrentTerm(term);
+                        node.setStatus(NodeStatus.FOLLOW);
+                        node.setVotedFor(StringUtils.EMPTY_STR);
+                    }
+                } catch (StatusRuntimeException e){
+                    // TODO
                 }
             });
         }
