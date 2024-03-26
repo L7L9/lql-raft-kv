@@ -48,27 +48,29 @@ public class ConsistencyService extends ConsistencyServiceGrpc.ConsistencyServic
     @Override
     public void voteRequest(VoteParam request, StreamObserver<VoteResponse> responseObserver) {
         VoteResponse.Builder response = VoteResponse.newBuilder().setVoteGranted(false);
-        log.info("asdasdasdasdasdasd");
+        if (!voteLock.tryLock()) {
+            responseObserver.onNext(response.build());
+            responseObserver.onCompleted();
+            return;
+        }
         try {
-            if (voteLock.tryLock()) {
-                // 判断当前节点是否任期比他新
-                if (node.getCurrentTerm() > request.getTerm()) {
+            // 判断当前节点是否任期比他新
+            if (node.getCurrentTerm() > request.getTerm()) {
+                return;
+            }
+            if (StringUtils.isEmpty(node.getVotedFor()) || node.getVotedFor().equals(request.getCandidateId())) {
+                LogEntity logEntity = logService.getLast();
+                if (logEntity != null && logEntity.getTerm() > request.getLastLogTerm()) {
                     return;
                 }
-                if (StringUtils.isEmpty(node.getVotedFor()) || node.getVotedFor().equals(request.getCandidateId())) {
-                    LogEntity logEntity = logService.getLast();
-                    if (logEntity != null && logEntity.getTerm() > request.getLastLogTerm()) {
-                        return;
-                    }
-                    if (logService.getLastIndex() > request.getLastLogIndex()) {
-                        return;
-                    }
-                    node.setStatus(NodeStatus.FOLLOW);
-                    node.setVotedFor(request.getCandidateId());
-                    node.setCurrentTerm(request.getTerm());
-
-                    response.setVoteGranted(true).setTerm(node.getCurrentTerm());
+                if (logService.getLastIndex() > request.getLastLogIndex()) {
+                    return;
                 }
+                node.setStatus(NodeStatus.FOLLOW);
+                node.setVotedFor(request.getCandidateId());
+                node.setCurrentTerm(request.getTerm());
+
+                response.setVoteGranted(true).setTerm(node.getCurrentTerm());
             }
         } finally {
             responseObserver.onNext(response.build());
@@ -80,12 +82,13 @@ public class ConsistencyService extends ConsistencyServiceGrpc.ConsistencyServic
     @Override
     public void appendEntriesRequest(AppendEntriesParam request, StreamObserver<AppendEntriesResponse> responseObserver) {
         AppendEntriesResponse.Builder response = AppendEntriesResponse.newBuilder().setSuccess(false);
+        // 获取不到锁返回false
+        if(!appendLock.tryLock()){
+            responseObserver.onNext(response.build());
+            responseObserver.onCompleted();
+            return;
+        }
         try{
-            // 获取不到锁返回false
-            if(!appendLock.tryLock()){
-                return;
-            }
-
             response.setTerm(node.getCurrentTerm());
             // 如果当前节点大于请求节点的任期,返回false
             if(node.getCurrentTerm() > request.getTerm()){
