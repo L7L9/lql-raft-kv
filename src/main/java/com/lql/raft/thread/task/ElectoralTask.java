@@ -1,9 +1,10 @@
 package com.lql.raft.thread.task;
 
 import com.lql.raft.constant.NodeStatus;
+import com.lql.raft.entity.LogEntity;
 import com.lql.raft.entity.Node;
 import com.lql.raft.entity.Peer;
-import com.lql.raft.factory.GrpcServerFactory;
+import com.lql.raft.manager.GrpcServerManager;
 import com.lql.raft.rpc.proto.VoteParam;
 import com.lql.raft.rpc.proto.VoteResponse;
 import com.lql.raft.service.LogService;
@@ -11,6 +12,7 @@ import com.lql.raft.service.impl.LogServiceImpl;
 import com.lql.raft.thread.ThreadPoolFactory;
 import com.lql.raft.utils.StringUtils;
 import com.lql.raft.utils.TimeUtils;
+import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -66,19 +68,31 @@ public class ElectoralTask implements Runnable{
 
         // 用于接收调用结果
         List<Future<VoteResponse>> futureList = new ArrayList<>();
-        GrpcServerFactory factory = GrpcServerFactory.getInstance();
+        GrpcServerManager factory = GrpcServerManager.getInstance();
         // 遍历同伴节点并且发送请求投票rpc
         for(Peer peer : node.getNodeConfig().getPeerSet()){
             Future<VoteResponse> result = ThreadPoolFactory.submit(() -> {
+                long term = 0L;
+                LogEntity logEntity = logService.getLast();
+                if(!Objects.isNull(logEntity)){
+                    term = logEntity.getTerm();
+                }
                 // 发送投票rpc
                 VoteParam voteParam = VoteParam.newBuilder()
                         .setCandidateId(node.getNodeConfig().getAddress())
                         .setTerm(currentTerm)
                         .setLastLogIndex(logService.getLastIndex())
-                        .setLastLogTerm(logService.getLast().getTerm()).build();
+                        .setLastLogTerm(term).build();
+                VoteResponse voteResponse = null;
+                try{
+                    voteResponse = factory.getConsistencyServiceBlockingStub(peer.getAddr()).voteRequest(voteParam);
+                } catch (StatusRuntimeException e){
+                    log.error("node breakdown address: {}",peer.getAddr());
+                    factory.removeBlockingStub(peer.getAddr());
+                }
 
-                VoteResponse voteResponse = factory.getConsistencyServiceBlockingStub(peer.getAddr()).voteRequest(voteParam);
                 return voteResponse;
+
             });
             futureList.add(result);
         }
@@ -89,12 +103,12 @@ public class ElectoralTask implements Runnable{
         CountDownLatch countDownLatch = new CountDownLatch(node.getNodeConfig().getPeerSet().size());
         // 接收结果并且处理
         for(Future<VoteResponse> result: futureList){
-            ThreadPoolFactory.execute(()->{
+            ThreadPoolFactory.submit(()->{
                 try {
                     // 获取结果
                     VoteResponse voteResponse = result.get(3000, TimeUnit.MILLISECONDS);
                     if(Objects.isNull(voteResponse)){
-                        return;
+                        return -1;
                     }
                     if(voteResponse.getVoteGranted()){
                         count.incrementAndGet();
@@ -105,8 +119,10 @@ public class ElectoralTask implements Runnable{
                             node.setCurrentTerm(voteResponse.getTerm());
                         }
                     }
+                    return 0;
                 } catch (Exception e) {
                     log.error("future get fail,reason: {}",e.getMessage());
+                    return -1;
                 } finally {
                     countDownLatch.countDown();
                 }
@@ -115,7 +131,7 @@ public class ElectoralTask implements Runnable{
 
         try {
             // 阻塞等待上面线程处理完结果
-            if(!countDownLatch.await(3000,TimeUnit.MILLISECONDS)){
+            if(!countDownLatch.await(3500,TimeUnit.MILLISECONDS)){
                 log.error("some vote rpc response overtime");
             }
         } catch (InterruptedException e) {
