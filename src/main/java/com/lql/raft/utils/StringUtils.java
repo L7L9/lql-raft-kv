@@ -8,6 +8,8 @@ package com.lql.raft.utils;
 public class StringUtils {
     public static final String EMPTY_STR = "";
 
+    public static final String IP_PREFIX = "localhost";
+
     public static boolean isEmpty(String str){
         return str == null || str.equals(EMPTY_STR);
     }
