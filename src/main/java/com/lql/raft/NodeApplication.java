@@ -2,7 +2,7 @@ package com.lql.raft;
 
 import com.lql.raft.config.NodeConfig;
 import com.lql.raft.entity.Node;
-import com.lql.raft.factory.GrpcServerFactory;
+import com.lql.raft.manager.GrpcServerManager;
 import com.lql.raft.rpc.ConsistencyService;
 import com.lql.raft.service.impl.LogServiceImpl;
 import lombok.extern.slf4j.Slf4j;
@@ -25,13 +25,13 @@ public class NodeApplication {
             nodeConfig.init();
 
             // 2.初始化服务
-            LogServiceImpl.getInstance().init(nodeConfig.getPort());
+            LogServiceImpl.getInstance().init(String.valueOf(nodeConfig.getPort()));
 
             // 3.初始化node
             node.setNodeConfig(nodeConfig);
             // 4.开启grpc服务
-            GrpcServerFactory factory = GrpcServerFactory.getInstance();
-            factory.initAndStart(nodeConfig.getGrpcPort(), new ConsistencyService(node));
+            GrpcServerManager factory = GrpcServerManager.getInstance();
+            factory.initAndStart(nodeConfig, new ConsistencyService(node));
 
             // 5.启动
             node.init();
