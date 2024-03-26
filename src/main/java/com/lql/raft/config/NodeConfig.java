@@ -17,9 +17,7 @@ import java.util.*;
  */
 @Data
 public class NodeConfig {
-    private String port;
-
-    private Integer grpcPort;
+    private Integer port;
 
     private String address;
 
@@ -30,11 +28,9 @@ public class NodeConfig {
 
         InputStream in = this.getClass().getClassLoader().getResourceAsStream("config.yml");
         Map<String, Object> map = yaml.load(in);
-
-        Integer tempPort = Integer.valueOf(System.getProperty("server.port"));
-        this.port = String.valueOf(tempPort);
-        this.grpcPort = tempPort + 1000;
-        this.address = InetAddress.getLocalHost().getHostAddress() + ":" + grpcPort;
+        // 获取启动端口
+        this.port = Integer.valueOf(System.getProperty("server.port"));
+        this.address = InetAddress.getLocalHost().getHostAddress() + ":" + port;
 
         this.peerSet = new HashSet<>();
         List<String> cluster = (List<String>)map.get("cluster");
