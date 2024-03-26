@@ -1,53 +1,51 @@
 package com.lql.raft.config;
 
 import com.lql.raft.entity.Peer;
-import lombok.Setter;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+import com.lql.raft.utils.StringUtils;
+import lombok.Data;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 当前节点配置
  * @author lql
  * @date 2024/03/14
  */
-@Setter
-@Configuration
+@Data
 public class NodeConfig {
-    @Value("${server.port}")
     private String port;
 
-    @Value("${node.cluster.address}")
-    private List<String> peerList;
+    private Integer grpcPort;
 
     private String address;
 
     private Set<Peer> peerSet;
 
-    {
-        peerSet = new HashSet<>();
-        try {
-            address = port + InetAddress.getLocalHost().getHostAddress();
-            for(String addr:peerList){
-                if(!addr.equals(address)){
-                    peerSet.add(new Peer(addr));
-                }
+    public void init() throws UnknownHostException {
+        Yaml yaml = new Yaml();
+
+        InputStream in = this.getClass().getClassLoader().getResourceAsStream("config.yml");
+        Map<String, Object> map = yaml.load(in);
+
+        Integer tempPort = Integer.valueOf(System.getProperty("server.port"));
+        this.port = String.valueOf(tempPort);
+        this.grpcPort = tempPort + 1000;
+        this.address = InetAddress.getLocalHost().getHostAddress() + ":" + grpcPort;
+
+        this.peerSet = new HashSet<>();
+        List<String> cluster = (List<String>)map.get("cluster");
+        for(String addr : cluster){
+            if(addr.startsWith(StringUtils.IP_PREFIX)){
+                addr = InetAddress.getLocalHost().getHostAddress() + addr.substring(StringUtils.IP_PREFIX.length());
             }
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
+            if(!addr.equals(address)){
+                Peer peer = new Peer(addr);
+                peerSet.add(peer);
+            }
         }
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public Set<Peer> getPeerSet() {
-        return peerSet;
     }
 }
