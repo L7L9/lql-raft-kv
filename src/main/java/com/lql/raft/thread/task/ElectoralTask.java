@@ -18,10 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -60,7 +57,7 @@ public class ElectoralTask implements Runnable{
         }
         // 状态变为获选人
         node.setStatus(NodeStatus.CANDIDATE);
-        node.setPreElectionTime(TimeUtils.currentTime());
+        node.setPreElectionTime(TimeUtils.currentTime() + ThreadLocalRandom.current().nextInt(150));
 
         node.setVotedFor(node.getNodeConfig().getAddress());
         long currentTerm = node.getCurrentTerm() + 1;
@@ -149,7 +146,7 @@ public class ElectoralTask implements Runnable{
             afterBecomeLeader();
         }
         node.setVotedFor(StringUtils.EMPTY_STR);
-        node.setPreElectionTime(TimeUtils.currentTime());
+        node.setPreElectionTime(TimeUtils.currentTime() + ThreadLocalRandom.current().nextInt(150));
     }
 
     /**
