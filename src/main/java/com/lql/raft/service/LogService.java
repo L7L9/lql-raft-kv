@@ -41,11 +41,4 @@ public interface LogService {
      * @param index 索引值
      */
     void delete(Long index);
-
-    /**
-     * 日志复制
-     * @param logEntity 日志
-     * @return 成功返回true
-     */
-    Future<Boolean> replication(LogEntity logEntity);
 }

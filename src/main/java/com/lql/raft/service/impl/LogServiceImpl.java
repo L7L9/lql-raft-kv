@@ -10,7 +10,6 @@ import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 
 import java.io.File;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -36,6 +35,9 @@ public class LogServiceImpl implements LogService {
      */
     private final ReentrantLock lock = new ReentrantLock();
 
+    /**
+     * log数据库
+     */
     private RocksDB logDb;
 
     private LogServiceImpl(){}
@@ -142,10 +144,5 @@ public class LogServiceImpl implements LogService {
         } catch (RocksDBException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public Future<Boolean> replication(LogEntity logEntity) {
-        return null;
     }
 }
