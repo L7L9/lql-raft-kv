@@ -1,10 +1,12 @@
 package com.lql.raft.manager;
 
 import com.lql.raft.config.NodeConfig;
-import com.lql.raft.entity.Peer;
 import com.lql.raft.rpc.ConsistencyService;
 import com.lql.raft.rpc.proto.ConsistencyServiceGrpc;
-import io.grpc.*;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -19,6 +21,8 @@ import java.util.HashMap;
 @Slf4j
 public class GrpcServerManager {
     private NodeConfig nodeConfig;
+
+    private Server server;
 
     private final HashMap<String,ConsistencyServiceGrpc.ConsistencyServiceBlockingStub>  stubMap = new HashMap<>();
 
@@ -45,8 +49,8 @@ public class GrpcServerManager {
      */
     public void initAndStart(NodeConfig nodeConfig,ConsistencyService consistencyService) throws IOException {
         this.nodeConfig = nodeConfig;
-        Server server = ServerBuilder.forPort(nodeConfig.getPort()).addService(consistencyService).build();
-        server.start();
+        this.server = ServerBuilder.forPort(nodeConfig.getPort()).addService(consistencyService).build();
+        this.server.start();
         log.info("grpc server start success,port: {}",nodeConfig.getPort());
     }
 
@@ -74,4 +78,11 @@ public class GrpcServerManager {
 //        nodeConfig.getPeerSet().remove(new Peer(address));
 //        stubMap.remove(address);
 //    }
+
+    /**
+     * 关闭当前节点rpc服务
+     */
+    public void destroy(){
+        this.server.shutdown();
+    }
 }
