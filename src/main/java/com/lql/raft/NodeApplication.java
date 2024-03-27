@@ -54,5 +54,6 @@ public class NodeApplication {
         }
 
         LogServiceImpl.getInstance().destroy();
+        GrpcServerManager.getInstance().destroy();
     }
 }
