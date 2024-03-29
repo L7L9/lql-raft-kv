@@ -47,9 +47,13 @@ public class GrpcServerManager {
      * 开启当前节点的grpc服务
      * @throws IOException 异常
      */
-    public void initAndStart(NodeConfig nodeConfig,ConsistencyService consistencyService) throws IOException {
+    public void initAndStart(NodeConfig nodeConfig,io.grpc.BindableService... services) throws IOException {
         this.nodeConfig = nodeConfig;
-        this.server = ServerBuilder.forPort(nodeConfig.getPort()).addService(consistencyService).build();
+        ServerBuilder<?> builder = ServerBuilder.forPort(nodeConfig.getPort());
+        for(io.grpc.BindableService service:services){
+            builder.addService(service);
+        }
+        this.server = builder.build();
         this.server.start();
         log.info("grpc server start success,port: {}",nodeConfig.getPort());
     }
@@ -69,15 +73,6 @@ public class GrpcServerManager {
         }
         return stubMap.get(address);
     }
-//
-//    /**
-//     * 删除对应stub
-//     * @param address 节点地址
-//     */
-//    public void removeClient(String address){
-//        nodeConfig.getPeerSet().remove(new Peer(address));
-//        stubMap.remove(address);
-//    }
 
     /**
      * 关闭当前节点rpc服务
