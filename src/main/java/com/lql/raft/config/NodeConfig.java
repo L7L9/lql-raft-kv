@@ -23,6 +23,8 @@ public class NodeConfig {
 
     private Set<Peer> peerSet;
 
+    private String leaderAddress;
+
     public void init() throws UnknownHostException {
         Yaml yaml = new Yaml();
 
