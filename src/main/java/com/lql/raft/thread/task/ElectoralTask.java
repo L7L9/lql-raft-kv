@@ -8,7 +8,9 @@ import com.lql.raft.manager.GrpcServerManager;
 import com.lql.raft.rpc.proto.VoteParam;
 import com.lql.raft.rpc.proto.VoteResponse;
 import com.lql.raft.service.LogService;
+import com.lql.raft.service.StateMachineService;
 import com.lql.raft.service.impl.LogServiceImpl;
+import com.lql.raft.service.impl.StateMachineServiceImpl;
 import com.lql.raft.thread.ThreadPoolFactory;
 import com.lql.raft.utils.StringUtils;
 import com.lql.raft.utils.TimeUtils;
@@ -16,6 +18,7 @@ import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -34,6 +37,8 @@ public class ElectoralTask implements Runnable{
     private final Node node;
 
     private final LogService logService = LogServiceImpl.getInstance();
+
+    private final StateMachineService stateMachineService = StateMachineServiceImpl.getInstance();
 
     /**
      * 选举间隔时间
@@ -153,6 +158,7 @@ public class ElectoralTask implements Runnable{
      * 成为leader后节点需要更新的事务
      */
     private void afterBecomeLeader(){
+        // 初始化nextIndex和MatchIndex
         int size = node.getNodeConfig().getPeerSet().size();
         node.setNextIndex(new ConcurrentHashMap<>(size));
         node.setMatchIndex(new ConcurrentHashMap<>(size));
@@ -162,6 +168,77 @@ public class ElectoralTask implements Runnable{
             node.getMatchIndex().put(peer,0L);
         }
 
+        // 发送空日志提交，用于提交处理之前的日志
+        LogEntity logEntity = new LogEntity().setTerm(node.getCurrentTerm());
+        // 预提交
+        logService.write(logEntity);
 
+        // 记录响应节点
+        int count = 0;
+        List<Future<Boolean>> futureList = new ArrayList<>();
+        for(Peer peer:node.getNodeConfig().getPeerSet()){
+            ++count;
+            Future<Boolean> result = node.replication(peer, logEntity);
+            futureList.add(result);
+        }
+
+        CountDownLatch latch = new CountDownLatch(futureList.size());
+        AtomicInteger successCount = new AtomicInteger(0);
+        // 处理结果
+        for(Future<Boolean> future:futureList){
+            ThreadPoolFactory.execute(()->{
+                try {
+                    if (future.get(3000, TimeUnit.MILLISECONDS)){
+                        // 记录成功个数
+                        successCount.incrementAndGet();
+                    }
+                } catch (Exception e) {
+                    log.error("exception happen while get replication result,reason: {}",e.getMessage());
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        try {
+            latch.await(4000,TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+        }
+
+        // 需要找到一个满足条件的最大索引midIndex,使得超过一半节点的matchIndex都大于等于midIndex，
+        // 并且在midIndex处的日志条目的任期号与当前任期号相同。
+        // 找到这样一个midIndex可以确保在当前任期号下,大多数节点都已经复制了该日志条目之前的所有日志条目,并且已经持久化到了存储中。
+        // 而中位数刚好可以保证
+        List<Long> matchIndexTemp = new ArrayList<>(node.getMatchIndex().values());
+        if(matchIndexTemp.size() >= 2){
+            Collections.sort(matchIndexTemp);
+        }
+        Long midIndex = matchIndexTemp.get(matchIndexTemp.size() / 2);
+        if(midIndex > node.getCommitIndex()){
+            // 判断任期是否相同
+            LogEntity logTemp = logService.get(midIndex);
+            if(Objects.nonNull(logTemp) && logTemp.getTerm() == node.getCurrentTerm()){
+                node.setCommitIndex(midIndex);
+            }
+        }
+
+        if(successCount.get() >= (count / 2)){
+            node.setCommitIndex(logEntity.getIndex());
+            stateMachineService.commit(logEntity);
+            node.setLastApplied(logEntity.getIndex());
+            log.info("logEntity successfully commit to state machine,logEntity info: {}",logEntity);
+        } else {
+            // 回滚之前的日志
+            Long endIndex = logService.getLastIndex();
+            for(long i = logEntity.getIndex();i < endIndex;i++){
+                logService.delete(i);
+            }
+            log.warn("logEntity fail to commit,logEntity info: {}",logEntity);
+
+            log.warn("node: {} become leader fail",node.getNodeConfig().getAddress());
+            node.setStatus(NodeStatus.FOLLOW);
+            node.setVotedFor(StringUtils.EMPTY_STR);
+        }
     }
 }
