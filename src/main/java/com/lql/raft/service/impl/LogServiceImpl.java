@@ -42,7 +42,7 @@ public class LogServiceImpl implements LogService {
 
     private LogServiceImpl(){}
 
-    private static LogServiceImpl instance = new LogServiceImpl();
+    private volatile static LogServiceImpl instance;
 
     public static LogServiceImpl getInstance(){
         if(instance == null){
