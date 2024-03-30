@@ -18,7 +18,6 @@ import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -182,63 +181,6 @@ public class ElectoralTask implements Runnable{
             futureList.add(result);
         }
 
-        CountDownLatch latch = new CountDownLatch(futureList.size());
-        AtomicInteger successCount = new AtomicInteger(0);
-        // 处理结果
-        for(Future<Boolean> future:futureList){
-            ThreadPoolFactory.execute(()->{
-                try {
-                    if (future.get(3000, TimeUnit.MILLISECONDS)){
-                        // 记录成功个数
-                        successCount.incrementAndGet();
-                    }
-                } catch (Exception e) {
-                    log.error("exception happen while get replication result,reason: {}",e.getMessage());
-                } finally {
-                    latch.countDown();
-                }
-            });
-        }
-
-        try {
-            latch.await(4000,TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            log.error(e.getMessage(), e);
-        }
-
-        // 需要找到一个满足条件的最大索引midIndex,使得超过一半节点的matchIndex都大于等于midIndex，
-        // 并且在midIndex处的日志条目的任期号与当前任期号相同。
-        // 找到这样一个midIndex可以确保在当前任期号下,大多数节点都已经复制了该日志条目之前的所有日志条目,并且已经持久化到了存储中。
-        // 而中位数刚好可以保证
-        List<Long> matchIndexTemp = new ArrayList<>(node.getMatchIndex().values());
-        if(matchIndexTemp.size() >= 2){
-            Collections.sort(matchIndexTemp);
-        }
-        Long midIndex = matchIndexTemp.get(matchIndexTemp.size() / 2);
-        if(midIndex > node.getCommitIndex()){
-            // 判断任期是否相同
-            LogEntity logTemp = logService.get(midIndex);
-            if(Objects.nonNull(logTemp) && logTemp.getTerm() == node.getCurrentTerm()){
-                node.setCommitIndex(midIndex);
-            }
-        }
-
-        if(successCount.get() >= (count / 2)){
-            node.setCommitIndex(logEntity.getIndex());
-            stateMachineService.commit(logEntity);
-            node.setLastApplied(logEntity.getIndex());
-            log.info("logEntity successfully commit to state machine,logEntity info: {}",logEntity);
-        } else {
-            // 回滚之前的日志
-            Long endIndex = logService.getLastIndex();
-            for(long i = logEntity.getIndex();i < endIndex;i++){
-                logService.delete(i);
-            }
-            log.warn("logEntity fail to commit,logEntity info: {}",logEntity);
-
-            log.warn("node: {} become leader fail",node.getNodeConfig().getAddress());
-            node.setStatus(NodeStatus.FOLLOW);
-            node.setVotedFor(StringUtils.EMPTY_STR);
-        }
+        node.dealWithReplicationResult(futureList,logEntity,count);
     }
 }

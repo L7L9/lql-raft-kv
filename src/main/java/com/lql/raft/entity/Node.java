@@ -7,20 +7,23 @@ import com.lql.raft.rpc.proto.AppendEntriesParam;
 import com.lql.raft.rpc.proto.AppendEntriesResponse;
 import com.lql.raft.rpc.proto.Log;
 import com.lql.raft.service.LogService;
+import com.lql.raft.service.StateMachineService;
 import com.lql.raft.service.impl.LogServiceImpl;
+import com.lql.raft.service.impl.StateMachineServiceImpl;
 import com.lql.raft.thread.ThreadPoolFactory;
 import com.lql.raft.thread.task.ElectoralTask;
 import com.lql.raft.thread.task.HeartBeatTask;
 import com.lql.raft.utils.ConvertUtils;
+import com.lql.raft.utils.StringUtils;
 import com.lql.raft.utils.TimeUtils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * node节点：表示当前节点的状态
@@ -102,12 +105,15 @@ public class Node {
      */
     private final static int REPLICATION_TTL = 20 * 1000;
 
+    private StateMachineService stateMachineService;
+
     public void init(){
         // 1.初始化节点状态
         status = NodeStatus.FOLLOW;
 
         // 2.获取持久化属性
         logService = LogServiceImpl.getInstance();
+        stateMachineService = StateMachineServiceImpl.getInstance();
         LogEntity logEntity = logService.getLast();
         currentTerm = logEntity == null?0:logEntity.getTerm();
 
@@ -190,5 +196,66 @@ public class Node {
 
             return false;
         });
+    }
+
+    public void dealWithReplicationResult(List<Future<Boolean>> futureList,LogEntity logEntity,int responseCount){
+        CountDownLatch latch = new CountDownLatch(futureList.size());
+        AtomicInteger successCount = new AtomicInteger(0);
+        // 处理结果
+        for(Future<Boolean> future:futureList){
+            ThreadPoolFactory.execute(()->{
+                try {
+                    if (future.get(3000, TimeUnit.MILLISECONDS)){
+                        // 记录成功个数
+                        successCount.incrementAndGet();
+                    }
+                } catch (Exception e) {
+                    log.error("exception happen while get replication result,reason: {}",e.getMessage());
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        try {
+            latch.await(4000,TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+        }
+
+        // 需要找到一个满足条件的最大索引midIndex,使得超过一半节点的matchIndex都大于等于midIndex，
+        // 并且在midIndex处的日志条目的任期号与当前任期号相同。
+        // 找到这样一个midIndex可以确保在当前任期号下,大多数节点都已经复制了该日志条目之前的所有日志条目,并且已经持久化到了存储中。
+        // 而中位数刚好可以保证
+        List<Long> matchIndexTemp = new ArrayList<>(this.getMatchIndex().values());
+        if(matchIndexTemp.size() >= 2){
+            Collections.sort(matchIndexTemp);
+        }
+        Long midIndex = matchIndexTemp.get(matchIndexTemp.size() / 2);
+        if(midIndex > this.getCommitIndex()){
+            // 判断任期是否相同
+            LogEntity logTemp = logService.get(midIndex);
+            if(Objects.nonNull(logTemp) && logTemp.getTerm() == this.getCurrentTerm()){
+                this.setCommitIndex(midIndex);
+            }
+        }
+
+        if(successCount.get() >= (responseCount / 2)){
+            this.setCommitIndex(logEntity.getIndex());
+            stateMachineService.commit(logEntity);
+            this.setLastApplied(logEntity.getIndex());
+            log.info("logEntity successfully commit to state machine,logEntity info: {}",logEntity);
+        } else {
+            // 回滚之前的日志
+            Long endIndex = logService.getLastIndex();
+            for(long i = logEntity.getIndex();i < endIndex;i++){
+                logService.delete(i);
+            }
+            log.warn("logEntity fail to commit,logEntity info: {}",logEntity);
+
+            log.warn("node: {} become leader fail",this.getNodeConfig().getAddress());
+            this.setStatus(NodeStatus.FOLLOW);
+            this.setVotedFor(StringUtils.EMPTY_STR);
+        }
     }
 }
