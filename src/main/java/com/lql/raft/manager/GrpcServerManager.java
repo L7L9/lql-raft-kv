@@ -1,7 +1,8 @@
 package com.lql.raft.manager;
 
 import com.lql.raft.config.NodeConfig;
-import com.lql.raft.rpc.ConsistencyService;
+import com.lql.raft.entity.Peer;
+import com.lql.raft.rpc.proto.ClientServiceGrpc;
 import com.lql.raft.rpc.proto.ConsistencyServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -20,12 +21,11 @@ import java.util.HashMap;
  */
 @Slf4j
 public class GrpcServerManager {
-    private NodeConfig nodeConfig;
-
     private Server server;
 
-    private final HashMap<String,ConsistencyServiceGrpc.ConsistencyServiceBlockingStub>  stubMap = new HashMap<>();
+    private final HashMap<String,ConsistencyServiceGrpc.ConsistencyServiceBlockingStub> consistencyServiceBlockingStubHashMap = new HashMap<>();
 
+    private final HashMap<String, ClientServiceGrpc.ClientServiceBlockingStub> clientServiceBlockingStubHashMap = new HashMap<>();
     private GrpcServerManager(){
     }
 
@@ -48,7 +48,7 @@ public class GrpcServerManager {
      * @throws IOException 异常
      */
     public void initAndStart(NodeConfig nodeConfig,io.grpc.BindableService... services) throws IOException {
-        this.nodeConfig = nodeConfig;
+        // 初始化服务端
         ServerBuilder<?> builder = ServerBuilder.forPort(nodeConfig.getPort());
         for(io.grpc.BindableService service:services){
             builder.addService(service);
@@ -56,22 +56,37 @@ public class GrpcServerManager {
         this.server = builder.build();
         this.server.start();
         log.info("grpc server start success,port: {}",nodeConfig.getPort());
-    }
 
-    /**
-     * 获取对应服务端的stub
-     * @param address 节点地址
-     * @return rpc stub
-     */
-    public ConsistencyServiceGrpc.ConsistencyServiceBlockingStub getConsistencyServiceBlockingStub(String address){
-        if(!stubMap.containsKey(address)){
+        // 初始化stub
+        for(Peer peer: nodeConfig.getPeerSet()){
+            String address = peer.getAddr();
             ManagedChannel managedChannel = ManagedChannelBuilder.forTarget(address)
                     .usePlaintext()
                     .build();
-
-            stubMap.put(address,ConsistencyServiceGrpc.newBlockingStub(managedChannel));
+            // 初始化consistencyService
+            consistencyServiceBlockingStubHashMap.put(address, ConsistencyServiceGrpc.newBlockingStub(managedChannel));
+            // 初始化clientService
+            clientServiceBlockingStubHashMap.put(address, ClientServiceGrpc.newBlockingStub(managedChannel));
+            log.info("grpc client init success,client-address: {}",address);
         }
-        return stubMap.get(address);
+    }
+
+    /**
+     * 获取一致性服务的stub
+     * @param address 节点地址
+     * @return consistencyServiceBlockingStub
+     */
+    public ConsistencyServiceGrpc.ConsistencyServiceBlockingStub getConsistencyServiceBlockingStub(String address){
+        return consistencyServiceBlockingStubHashMap.get(address);
+    }
+
+    /**
+     * 获取client服务的stub
+     * @param address 节点地址
+     * @return clientServiceBlockingStub
+     */
+    public ClientServiceGrpc.ClientServiceBlockingStub getClientServiceBlockingStub(String address){
+        return clientServiceBlockingStubHashMap.get(address);
     }
 
     /**
