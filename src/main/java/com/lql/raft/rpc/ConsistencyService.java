@@ -69,7 +69,7 @@ public class ConsistencyService extends ConsistencyServiceGrpc.ConsistencyServic
                 node.setStatus(NodeStatus.FOLLOW);
                 node.setVotedFor(request.getCandidateId());
                 node.setCurrentTerm(request.getTerm());
-
+                node.getNodeConfig().setLeaderAddress(request.getCandidateId());
                 response.setVoteGranted(true).setTerm(node.getCurrentTerm());
             }
         } finally {
