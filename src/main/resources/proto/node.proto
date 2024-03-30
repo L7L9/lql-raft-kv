@@ -16,6 +16,23 @@ service ConsistencyService{
   rpc AppendEntriesRequest(AppendEntriesParam) returns(AppendEntriesResponse){};
 }
 
+service ClientService{
+  rpc clientRequest(ClientParam) returns(ClientResponse) {};
+
+}
+
+message ClientParam{
+  string key = 1;
+  string value = 2;
+  int32 requestType = 3;
+}
+
+message ClientResponse{
+  bool isSuccess = 1;
+  string message = 2;
+  string data = 3;
+}
+
 message VoteParam{
   // 候选人的任期号
   int64 term = 1;
