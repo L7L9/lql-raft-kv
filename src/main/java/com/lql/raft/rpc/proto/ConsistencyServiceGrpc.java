@@ -1,30 +1,18 @@
 package com.lql.raft.rpc.proto;
 
 import static io.grpc.MethodDescriptor.generateFullMethodName;
-import static io.grpc.stub.ClientCalls.asyncBidiStreamingCall;
-import static io.grpc.stub.ClientCalls.asyncClientStreamingCall;
-import static io.grpc.stub.ClientCalls.asyncServerStreamingCall;
-import static io.grpc.stub.ClientCalls.asyncUnaryCall;
-import static io.grpc.stub.ClientCalls.blockingServerStreamingCall;
-import static io.grpc.stub.ClientCalls.blockingUnaryCall;
-import static io.grpc.stub.ClientCalls.futureUnaryCall;
-import static io.grpc.stub.ServerCalls.asyncBidiStreamingCall;
-import static io.grpc.stub.ServerCalls.asyncClientStreamingCall;
-import static io.grpc.stub.ServerCalls.asyncServerStreamingCall;
-import static io.grpc.stub.ServerCalls.asyncUnaryCall;
-import static io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall;
-import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;
 
 /**
  */
 @javax.annotation.Generated(
-    value = "by gRPC proto compiler (version 1.26.0)",
+    value = "by gRPC proto compiler (version 1.62.2)",
     comments = "Source: node.proto")
+@io.grpc.stub.annotations.GrpcGenerated
 public final class ConsistencyServiceGrpc {
 
   private ConsistencyServiceGrpc() {}
 
-  public static final String SERVICE_NAME = "ConsistencyService";
+  public static final java.lang.String SERVICE_NAME = "ConsistencyService";
 
   // Static method descriptors that strictly reflect the proto.
   private static volatile io.grpc.MethodDescriptor<com.lql.raft.rpc.proto.VoteParam,
@@ -135,16 +123,16 @@ public final class ConsistencyServiceGrpc {
 
   /**
    */
-  public static abstract class ConsistencyServiceImplBase implements io.grpc.BindableService {
+  public interface AsyncService {
 
     /**
      * <pre>
      * 请求投票选举的rpc接口
      * </pre>
      */
-    public void voteRequest(com.lql.raft.rpc.proto.VoteParam request,
+    default void voteRequest(com.lql.raft.rpc.proto.VoteParam request,
         io.grpc.stub.StreamObserver<com.lql.raft.rpc.proto.VoteResponse> responseObserver) {
-      asyncUnimplementedUnaryCall(getVoteRequestMethod(), responseObserver);
+      io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getVoteRequestMethod(), responseObserver);
     }
 
     /**
@@ -152,34 +140,28 @@ public final class ConsistencyServiceGrpc {
      * 追加日志的rpc接口
      * </pre>
      */
-    public void appendEntriesRequest(com.lql.raft.rpc.proto.AppendEntriesParam request,
+    default void appendEntriesRequest(com.lql.raft.rpc.proto.AppendEntriesParam request,
         io.grpc.stub.StreamObserver<com.lql.raft.rpc.proto.AppendEntriesResponse> responseObserver) {
-      asyncUnimplementedUnaryCall(getAppendEntriesRequestMethod(), responseObserver);
-    }
-
-    @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
-      return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
-          .addMethod(
-            getVoteRequestMethod(),
-            asyncUnaryCall(
-              new MethodHandlers<
-                com.lql.raft.rpc.proto.VoteParam,
-                com.lql.raft.rpc.proto.VoteResponse>(
-                  this, METHODID_VOTE_REQUEST)))
-          .addMethod(
-            getAppendEntriesRequestMethod(),
-            asyncUnaryCall(
-              new MethodHandlers<
-                com.lql.raft.rpc.proto.AppendEntriesParam,
-                com.lql.raft.rpc.proto.AppendEntriesResponse>(
-                  this, METHODID_APPEND_ENTRIES_REQUEST)))
-          .build();
+      io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getAppendEntriesRequestMethod(), responseObserver);
     }
   }
 
   /**
+   * Base class for the server implementation of the service ConsistencyService.
    */
-  public static final class ConsistencyServiceStub extends io.grpc.stub.AbstractAsyncStub<ConsistencyServiceStub> {
+  public static abstract class ConsistencyServiceImplBase
+      implements io.grpc.BindableService, AsyncService {
+
+    @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
+      return ConsistencyServiceGrpc.bindService(this);
+    }
+  }
+
+  /**
+   * A stub to allow clients to do asynchronous rpc calls to service ConsistencyService.
+   */
+  public static final class ConsistencyServiceStub
+      extends io.grpc.stub.AbstractAsyncStub<ConsistencyServiceStub> {
     private ConsistencyServiceStub(
         io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       super(channel, callOptions);
@@ -198,7 +180,7 @@ public final class ConsistencyServiceGrpc {
      */
     public void voteRequest(com.lql.raft.rpc.proto.VoteParam request,
         io.grpc.stub.StreamObserver<com.lql.raft.rpc.proto.VoteResponse> responseObserver) {
-      asyncUnaryCall(
+      io.grpc.stub.ClientCalls.asyncUnaryCall(
           getChannel().newCall(getVoteRequestMethod(), getCallOptions()), request, responseObserver);
     }
 
@@ -209,14 +191,16 @@ public final class ConsistencyServiceGrpc {
      */
     public void appendEntriesRequest(com.lql.raft.rpc.proto.AppendEntriesParam request,
         io.grpc.stub.StreamObserver<com.lql.raft.rpc.proto.AppendEntriesResponse> responseObserver) {
-      asyncUnaryCall(
+      io.grpc.stub.ClientCalls.asyncUnaryCall(
           getChannel().newCall(getAppendEntriesRequestMethod(), getCallOptions()), request, responseObserver);
     }
   }
 
   /**
+   * A stub to allow clients to do synchronous rpc calls to service ConsistencyService.
    */
-  public static final class ConsistencyServiceBlockingStub extends io.grpc.stub.AbstractBlockingStub<ConsistencyServiceBlockingStub> {
+  public static final class ConsistencyServiceBlockingStub
+      extends io.grpc.stub.AbstractBlockingStub<ConsistencyServiceBlockingStub> {
     private ConsistencyServiceBlockingStub(
         io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       super(channel, callOptions);
@@ -234,7 +218,7 @@ public final class ConsistencyServiceGrpc {
      * </pre>
      */
     public com.lql.raft.rpc.proto.VoteResponse voteRequest(com.lql.raft.rpc.proto.VoteParam request) {
-      return blockingUnaryCall(
+      return io.grpc.stub.ClientCalls.blockingUnaryCall(
           getChannel(), getVoteRequestMethod(), getCallOptions(), request);
     }
 
@@ -244,14 +228,16 @@ public final class ConsistencyServiceGrpc {
      * </pre>
      */
     public com.lql.raft.rpc.proto.AppendEntriesResponse appendEntriesRequest(com.lql.raft.rpc.proto.AppendEntriesParam request) {
-      return blockingUnaryCall(
+      return io.grpc.stub.ClientCalls.blockingUnaryCall(
           getChannel(), getAppendEntriesRequestMethod(), getCallOptions(), request);
     }
   }
 
   /**
+   * A stub to allow clients to do ListenableFuture-style rpc calls to service ConsistencyService.
    */
-  public static final class ConsistencyServiceFutureStub extends io.grpc.stub.AbstractFutureStub<ConsistencyServiceFutureStub> {
+  public static final class ConsistencyServiceFutureStub
+      extends io.grpc.stub.AbstractFutureStub<ConsistencyServiceFutureStub> {
     private ConsistencyServiceFutureStub(
         io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       super(channel, callOptions);
@@ -270,7 +256,7 @@ public final class ConsistencyServiceGrpc {
      */
     public com.google.common.util.concurrent.ListenableFuture<com.lql.raft.rpc.proto.VoteResponse> voteRequest(
         com.lql.raft.rpc.proto.VoteParam request) {
-      return futureUnaryCall(
+      return io.grpc.stub.ClientCalls.futureUnaryCall(
           getChannel().newCall(getVoteRequestMethod(), getCallOptions()), request);
     }
 
@@ -281,7 +267,7 @@ public final class ConsistencyServiceGrpc {
      */
     public com.google.common.util.concurrent.ListenableFuture<com.lql.raft.rpc.proto.AppendEntriesResponse> appendEntriesRequest(
         com.lql.raft.rpc.proto.AppendEntriesParam request) {
-      return futureUnaryCall(
+      return io.grpc.stub.ClientCalls.futureUnaryCall(
           getChannel().newCall(getAppendEntriesRequestMethod(), getCallOptions()), request);
     }
   }
@@ -294,10 +280,10 @@ public final class ConsistencyServiceGrpc {
       io.grpc.stub.ServerCalls.ServerStreamingMethod<Req, Resp>,
       io.grpc.stub.ServerCalls.ClientStreamingMethod<Req, Resp>,
       io.grpc.stub.ServerCalls.BidiStreamingMethod<Req, Resp> {
-    private final ConsistencyServiceImplBase serviceImpl;
+    private final AsyncService serviceImpl;
     private final int methodId;
 
-    MethodHandlers(ConsistencyServiceImplBase serviceImpl, int methodId) {
+    MethodHandlers(AsyncService serviceImpl, int methodId) {
       this.serviceImpl = serviceImpl;
       this.methodId = methodId;
     }
@@ -330,6 +316,25 @@ public final class ConsistencyServiceGrpc {
     }
   }
 
+  public static final io.grpc.ServerServiceDefinition bindService(AsyncService service) {
+    return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
+        .addMethod(
+          getVoteRequestMethod(),
+          io.grpc.stub.ServerCalls.asyncUnaryCall(
+            new MethodHandlers<
+              com.lql.raft.rpc.proto.VoteParam,
+              com.lql.raft.rpc.proto.VoteResponse>(
+                service, METHODID_VOTE_REQUEST)))
+        .addMethod(
+          getAppendEntriesRequestMethod(),
+          io.grpc.stub.ServerCalls.asyncUnaryCall(
+            new MethodHandlers<
+              com.lql.raft.rpc.proto.AppendEntriesParam,
+              com.lql.raft.rpc.proto.AppendEntriesResponse>(
+                service, METHODID_APPEND_ENTRIES_REQUEST)))
+        .build();
+  }
+
   private static abstract class ConsistencyServiceBaseDescriptorSupplier
       implements io.grpc.protobuf.ProtoFileDescriptorSupplier, io.grpc.protobuf.ProtoServiceDescriptorSupplier {
     ConsistencyServiceBaseDescriptorSupplier() {}
@@ -353,9 +358,9 @@ public final class ConsistencyServiceGrpc {
   private static final class ConsistencyServiceMethodDescriptorSupplier
       extends ConsistencyServiceBaseDescriptorSupplier
       implements io.grpc.protobuf.ProtoMethodDescriptorSupplier {
-    private final String methodName;
+    private final java.lang.String methodName;
 
-    ConsistencyServiceMethodDescriptorSupplier(String methodName) {
+    ConsistencyServiceMethodDescriptorSupplier(java.lang.String methodName) {
       this.methodName = methodName;
     }
 
