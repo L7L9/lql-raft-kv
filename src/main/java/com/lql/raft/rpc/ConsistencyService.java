@@ -6,7 +6,9 @@ import com.lql.raft.entity.Node;
 import com.lql.raft.entity.Operation;
 import com.lql.raft.rpc.proto.*;
 import com.lql.raft.service.LogService;
+import com.lql.raft.service.StateMachineService;
 import com.lql.raft.service.impl.LogServiceImpl;
+import com.lql.raft.service.impl.StateMachineServiceImpl;
 import com.lql.raft.utils.StringUtils;
 import com.lql.raft.utils.TimeUtils;
 import io.grpc.stub.StreamObserver;
@@ -28,9 +30,12 @@ public class ConsistencyService extends ConsistencyServiceGrpc.ConsistencyServic
 
     private final LogService logService;
 
+    private final StateMachineService stateMachineService;
+
     public ConsistencyService(Node node){
         this.node = node;
         logService = LogServiceImpl.getInstance();
+        stateMachineService = StateMachineServiceImpl.getInstance();
     }
 
     /**
@@ -101,33 +106,47 @@ public class ConsistencyService extends ConsistencyServiceGrpc.ConsistencyServic
             // 重置计时器
             node.setPreHeartBeatTime(TimeUtils.currentTime());
             node.setPreElectionTime(TimeUtils.currentTime());
+            node.setCurrentTerm(request.getTerm());
             // 判断是否为心跳,为心跳则没有携带新日志
             if(request.getEntriesCount() == 0){
-                // TODO
+                // 日志提交到状态机，前提是leader已经把该日志提交了
+                if(request.getLeaderCommit() > node.getCommitIndex()){
+                    // 将commitIndex设置为leaderCommit和自身日志最后一个index的较小值
+                    node.setCommitIndex(Math.min(request.getLeaderCommit(), logService.getLastIndex()));
+
+                    long nextCommit = node.getCommitIndex() + 1;
+                    while(nextCommit <= node.getCommitIndex()){
+                        stateMachineService.commit(logService.get(nextCommit));
+                        ++nextCommit;
+                    }
+                }
+
                 log.info("node receive heart beat,address: {},from address: {}",node.getNodeConfig().getAddress(),request.getLeaderId());
                 response.setTerm(node.getCurrentTerm());
                 return;
             }
+
+            if(logService.getLastIndex() != 0 && request.getPreLogIndex() != 0){
+                LogEntity logEntity;
+                if((logEntity = logService.get(request.getPreLogIndex())) != null){
+                    if(logEntity.getTerm() != request.getPreLogTerm()){
+                        return;
+                    }
+                }
+                return;
+            }
+
             // 判断是否有条目在prevLogIndex上能和prevLogTerm匹配上
-            LogEntity logEntity = logService.get(request.getPreLogIndex());
-            if(Objects.isNull(logEntity) || !logEntity.getTerm().equals(request.getPreLogTerm())){
+            LogEntity logEntity = logService.get(request.getPreLogIndex() + 1);
+            if(!Objects.isNull(logEntity) && !logEntity.getTerm().equals(request.getPreLogTerm())){
+                logService.deleteFromFirstIndex(logEntity.getIndex());
+            } else if(!Objects.isNull(logEntity)){
+                //已经有日志
+                response.setSuccess(true);
                 return;
             }
 
             List<Log> logList = request.getEntriesList();
-            // 判断是否有条目和新条目产生冲突
-            long nextLogIndex = request.getPreLogIndex() + 1;
-            LogEntity newLog = logService.get(nextLogIndex);
-            if(!Objects.isNull(newLog) && newLog.getTerm() != logList.get(0).getTerm()){
-                // 有冲突,将当前节点后面的条目统统删除
-                long lastIndex = logService.getLastIndex();
-                while(nextLogIndex <= lastIndex){
-                    // 删除后续的条目
-                    logService.delete(nextLogIndex);
-                    ++nextLogIndex;
-                }
-            }
-
             // 追加未存在的新条目
             for(Log log:logList){
                 Operation operation = null;
@@ -142,11 +161,19 @@ public class ConsistencyService extends ConsistencyServiceGrpc.ConsistencyServic
                         .setOperation(operation));
             }
 
+            long nextCommitIndex = node.getCommitIndex() + 1;
             // 设置条目索引
             if(request.getLeaderCommit() > node.getCommitIndex()){
                 long min = Math.min(request.getLeaderCommit(),logService.getLastIndex());
                 node.setCommitIndex(min);
             }
+            // 提交日志
+            while(nextCommitIndex <= node.getCommitIndex()){
+                stateMachineService.commit(logService.get(nextCommitIndex));
+                ++nextCommitIndex;
+            }
+            response.setTerm(node.getCurrentTerm());
+            node.setStatus(NodeStatus.FOLLOW);
         } finally {
             responseObserver.onNext(response.build());
             responseObserver.onCompleted();
