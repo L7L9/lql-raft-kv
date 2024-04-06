@@ -16,10 +16,12 @@ import com.lql.raft.thread.task.HeartBeatTask;
 import com.lql.raft.utils.ConvertUtils;
 import com.lql.raft.utils.StringUtils;
 import com.lql.raft.utils.TimeUtils;
+import io.grpc.StatusRuntimeException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -103,7 +105,7 @@ public class Node {
     /**
      * 日志复制的ttl
      */
-    private final static int REPLICATION_TTL = 20 * 1000;
+    private final static long REPLICATION_TTL = 20 * 1000L;
 
     private StateMachineService stateMachineService;
 
@@ -130,13 +132,13 @@ public class Node {
      * @param logEntity 日志
      * @return 成功返回true
      */
-    public synchronized Future<Boolean> replication(Peer peer,LogEntity logEntity){
+    public Future<Boolean> replication(Peer peer,LogEntity logEntity){
         return ThreadPoolFactory.submit(()->{
             long start = TimeUtils.currentTime();
             long end = start;
 
             // 一定时间内可以重试
-            while(end - start <= REPLICATION_TTL){
+            while(end - start < REPLICATION_TTL){
                 AppendEntriesParam.Builder builder = AppendEntriesParam.newBuilder();
 
                 //设置追加日志rpc请求参数
@@ -159,17 +161,23 @@ public class Node {
                 }
 
                 // 获取最小日志
-                LogEntity preLogEntity = logService.get(logList.get(0).getIndex());
+                LogEntity preLogEntity = logService.get(logList.get(0).getIndex() - 1);
                 if(Objects.isNull(preLogEntity)){
                     builder.setPreLogIndex(0L).setPreLogTerm(0L);
                 } else {
                     builder.setPreLogIndex(preLogEntity.getIndex()).setPreLogTerm(preLogEntity.getTerm());
                 }
                 AppendEntriesParam param = builder.addAllEntries(logList).build();
-
-                AppendEntriesResponse response = GrpcServerManager.getInstance()
-                        .getConsistencyServiceBlockingStub(peer.getAddr()).appendEntriesRequest(param);
-
+                AppendEntriesResponse response = null;
+                try{
+                    response = GrpcServerManager.getInstance()
+                            .getConsistencyServiceBlockingStub(peer.getAddr()).appendEntriesRequest(param);
+                } catch (StatusRuntimeException e){
+                    log.warn("replication exception happen,message: {}",e.getMessage());
+                }
+                if(Objects.isNull(response)){
+                    return false;
+                }
                 // 处理结果
                 if (response.getSuccess()){
                     // 成功，更新matchIndex和nextIndex
@@ -185,10 +193,10 @@ public class Node {
                         return false;
                     } else {
                         if(nextIndexTemp == 0L){
-                            ++nextIndexTemp;
+                            nextIndexTemp = 1L;
                         }
                         nextIndex.put(peer,nextIndexTemp - 1);
-                        log.warn("follower address:{}, nextIndex do not match",peer.getAddr());
+                        log.warn("follower address:{}, nextIndex do not match,nextIndex:{}",peer.getAddr(),nextIndexTemp);
                     }
                 }
                 end = TimeUtils.currentTime();
@@ -199,18 +207,17 @@ public class Node {
     }
 
     public void dealWithReplicationResult(List<Future<Boolean>> futureList,LogEntity logEntity,int responseCount){
+        List<Boolean> list = new CopyOnWriteArrayList<>();
         CountDownLatch latch = new CountDownLatch(futureList.size());
-        AtomicInteger successCount = new AtomicInteger(0);
+        final AtomicInteger successCount = new AtomicInteger(0);
         // 处理结果
         for(Future<Boolean> future:futureList){
             ThreadPoolFactory.execute(()->{
                 try {
-                    if (future.get(3000, TimeUnit.MILLISECONDS)){
-                        // 记录成功个数
-                        successCount.incrementAndGet();
-                    }
+                    list.add(future.get(3000, TimeUnit.MILLISECONDS));
                 } catch (Exception e) {
-                    log.error("exception happen while get replication result,reason: {}",e.getMessage());
+                    log.error("exception happen while get replication result,reason: {}",e.getMessage(),e);
+                    list.add(false);
                 } finally {
                     latch.countDown();
                 }
@@ -221,6 +228,12 @@ public class Node {
             latch.await(4000,TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             log.error(e.getMessage(), e);
+        }
+
+        for(Boolean result:list){
+            if(result){
+                successCount.incrementAndGet();
+            }
         }
 
         // 需要找到一个满足条件的最大索引midIndex,使得超过一半节点的matchIndex都大于等于midIndex，
@@ -247,10 +260,7 @@ public class Node {
             log.info("logEntity successfully commit to state machine,logEntity info: {}",logEntity);
         } else {
             // 回滚之前的日志
-            Long endIndex = logService.getLastIndex();
-            for(long i = logEntity.getIndex();i < endIndex;i++){
-                logService.delete(i);
-            }
+            logService.deleteFromFirstIndex(logEntity.getIndex());
             log.warn("logEntity fail to commit,logEntity info: {}",logEntity);
 
             log.warn("node: {} become leader fail",this.getNodeConfig().getAddress());
