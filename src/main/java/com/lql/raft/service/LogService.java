@@ -36,9 +36,10 @@ public interface LogService {
      */
     Long getLastIndex();
 
+
     /**
-     * 删除对应索引的条目
-     * @param index 索引值
+     * 从参数开始的index删除到lastIndex
+     * @param firstIndex 初始index
      */
-    void delete(Long index);
+    void deleteFromFirstIndex(Long firstIndex);
 }

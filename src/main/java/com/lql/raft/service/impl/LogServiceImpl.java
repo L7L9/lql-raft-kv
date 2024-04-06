@@ -28,7 +28,7 @@ public class LogServiceImpl implements LogService {
     /**
      * 锁的ttl
      */
-    private final static int LOCK_TTL = 5000;
+    private final static int LOCK_TTL = 3000;
 
     /**
      * 写删锁，防止同时写和删除
@@ -101,6 +101,7 @@ public class LogServiceImpl implements LogService {
         } catch (RocksDBException | InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
+            setLastKey(logEntity.getIndex());
             lock.unlock();
         }
     }
@@ -137,10 +138,39 @@ public class LogServiceImpl implements LogService {
         return lastIndex;
     }
 
+
     @Override
-    public void delete(Long index) {
+    public void deleteFromFirstIndex(Long firstIndex) {
+        long count = 0;
+        boolean flag = false;
+        long lastIndex = getLastIndex();
+        try{
+            if (!lock.tryLock(LOCK_TTL,TimeUnit.MILLISECONDS)){
+                throw new RuntimeException("lock failed,cannot delete logEntity");
+            }
+            while(firstIndex <= lastIndex){
+                logDb.delete(firstIndex.toString().getBytes());
+                ++firstIndex;
+                ++count;
+            }
+            flag = true;
+        } catch (InterruptedException | RocksDBException e) {
+            log.error("logService deleteFromFirstIndex error,message: {}",e.getMessage(),e);
+        } finally {
+            if(flag){
+                setLastKey(lastIndex - count);
+            }
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 设置数据库lastKey的大小
+     * @param newIndex 新index
+     */
+    private void setLastKey(Long newIndex){
         try {
-            logDb.delete(index.toString().getBytes());
+            logDb.put(LAST_KEY,newIndex.toString().getBytes());
         } catch (RocksDBException e) {
             throw new RuntimeException(e);
         }
