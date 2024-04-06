@@ -42,7 +42,7 @@ public class ElectoralTask implements Runnable{
     /**
      * 选举间隔时间
      */
-    private final static long ELECTION_INTERVAL = 20 * 1000;
+    private final static long ELECTION_INTERVAL = 15 * 1000;
 
     public ElectoralTask(Node node){
         this.node = node;
@@ -59,6 +59,7 @@ public class ElectoralTask implements Runnable{
         if(current - node.getPreElectionTime() < ELECTION_INTERVAL){
             return;
         }
+        log.warn("node will become candidate and start election,address: {}",node.getNodeConfig().getAddress());
         // 状态变为获选人
         node.setStatus(NodeStatus.CANDIDATE);
         node.setPreElectionTime(TimeUtils.currentTime() + ThreadLocalRandom.current().nextInt(150));
@@ -161,9 +162,9 @@ public class ElectoralTask implements Runnable{
         int size = node.getNodeConfig().getPeerSet().size();
         node.setNextIndex(new ConcurrentHashMap<>(size));
         node.setMatchIndex(new ConcurrentHashMap<>(size));
-
+        long nextIndex = logService.getLastIndex() + 1;
         for(Peer peer:node.getNodeConfig().getPeerSet()){
-            node.getNextIndex().put(peer, logService.getLastIndex() + 1);
+            node.getNextIndex().put(peer, nextIndex);
             node.getMatchIndex().put(peer,0L);
         }
 
