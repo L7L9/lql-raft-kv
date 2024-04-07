@@ -118,7 +118,18 @@ public class ClientService extends ClientServiceGrpc.ClientServiceImplBase {
             futureList.add(result);
         }
 
-        node.dealWithReplicationResult(futureList,logEntity,count);
+        int successCount = node.dealWithReplicationResult(futureList, logEntity);
+        if(successCount >= (count / 2)){
+            node.setCommitIndex(logEntity.getIndex());
+            stateMachineService.commit(logEntity);
+            node.setLastApplied(logEntity.getIndex());
+            log.info("logEntity successfully commit to state machine,logEntity info: {}",logEntity);
+        } else {
+            // 回滚之前的日志
+            logService.deleteFromFirstIndex(logEntity.getIndex());
+            log.warn("logEntity fail to commit,logEntity info: {}",logEntity);
+            // TODO 重试日志
+        }
         return true;
     }
 }
