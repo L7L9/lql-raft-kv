@@ -22,15 +22,13 @@ public class ConvertUtils {
         if(Objects.isNull(logEntity)){
             return null;
         }
+        Log.Builder builder = Log.newBuilder().setTerm(logEntity.getTerm()).setIndex(logEntity.getIndex());
         Operation operation= logEntity.getOperation();
-        Operate operate = null;
         if(!Objects.isNull(operation)){
-            operate = Operate.newBuilder().setKey(operation.getKey()).setValue(operation.getValue()).build();
+            Operate operate = Operate.newBuilder().setKey(operation.getKey()).setValue(operation.getValue()).build();
+            return builder.setOperate(operate).build();
         }
 
-        return Log.newBuilder()
-                .setTerm(logEntity.getTerm())
-                .setIndex(logEntity.getIndex())
-                .setOperate(operate).build();
+        return builder.build();
     }
 }
