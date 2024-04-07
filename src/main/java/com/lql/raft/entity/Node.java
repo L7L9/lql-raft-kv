@@ -206,7 +206,7 @@ public class Node {
         });
     }
 
-    public void dealWithReplicationResult(List<Future<Boolean>> futureList,LogEntity logEntity,int responseCount){
+    public int dealWithReplicationResult(List<Future<Boolean>> futureList,LogEntity logEntity){
         List<Boolean> list = new CopyOnWriteArrayList<>();
         CountDownLatch latch = new CountDownLatch(futureList.size());
         final AtomicInteger successCount = new AtomicInteger(0);
@@ -253,19 +253,6 @@ public class Node {
             }
         }
 
-        if(successCount.get() >= (responseCount / 2)){
-            this.setCommitIndex(logEntity.getIndex());
-            stateMachineService.commit(logEntity);
-            this.setLastApplied(logEntity.getIndex());
-            log.info("logEntity successfully commit to state machine,logEntity info: {}",logEntity);
-        } else {
-            // 回滚之前的日志
-            logService.deleteFromFirstIndex(logEntity.getIndex());
-            log.warn("logEntity fail to commit,logEntity info: {}",logEntity);
-
-            log.warn("node: {} become leader fail",this.getNodeConfig().getAddress());
-            this.setStatus(NodeStatus.FOLLOW);
-            this.setVotedFor(StringUtils.EMPTY_STR);
-        }
+        return successCount.get();
     }
 }
