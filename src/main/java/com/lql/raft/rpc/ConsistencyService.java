@@ -54,22 +54,27 @@ public class ConsistencyService extends ConsistencyServiceGrpc.ConsistencyServic
     public void voteRequest(VoteParam request, StreamObserver<VoteResponse> responseObserver) {
         VoteResponse.Builder response = VoteResponse.newBuilder().setVoteGranted(false);
         if (!voteLock.tryLock()) {
-            responseObserver.onNext(response.build());
+            responseObserver.onNext(response.setTerm(node.getCurrentTerm()).build());
             responseObserver.onCompleted();
             return;
         }
         try {
             // 判断当前节点是否任期比他新
             if (node.getCurrentTerm() > request.getTerm()) {
+                response.setTerm(node.getCurrentTerm());
                 return;
             }
+
             if (StringUtils.isEmpty(node.getVotedFor()) || node.getVotedFor().equals(request.getCandidateId())) {
                 LogEntity logEntity = logService.getLast();
-                if (logEntity != null && logEntity.getTerm() > request.getLastLogTerm()) {
-                    return;
-                }
-                if (logService.getLastIndex() > request.getLastLogIndex()) {
-                    return;
+                if (logEntity != null) {
+                    if(logEntity.getTerm() > request.getLastLogTerm()){
+                        return;
+                    }
+
+                    if (logService.getLastIndex() > request.getLastLogIndex()) {
+                        return;
+                    }
                 }
                 node.setStatus(NodeStatus.FOLLOW);
                 node.setVotedFor(request.getCandidateId());
