@@ -148,9 +148,11 @@ public class ElectoralTask implements Runnable{
         if(voteCount >= (node.getNodeConfig().getPeerSet().size() + 1) / 2){
             log.info("new node become leader,address: {}",node.getNodeConfig().getAddress());
             node.setStatus(NodeStatus.LEADER);
+            node.setVotedFor(StringUtils.EMPTY_STR);
             afterBecomeLeader();
+        } else {
+            node.setVotedFor(StringUtils.EMPTY_STR);
         }
-        node.setVotedFor(StringUtils.EMPTY_STR);
         node.setPreElectionTime(TimeUtils.currentTime() + ThreadLocalRandom.current().nextInt(150));
     }
 
@@ -182,6 +184,22 @@ public class ElectoralTask implements Runnable{
             futureList.add(result);
         }
 
-        node.dealWithReplicationResult(futureList,logEntity,count);
+        int successCount = node.dealWithReplicationResult(futureList, logEntity);
+
+        if(successCount >= (count / 2)){
+            node.setCommitIndex(logEntity.getIndex());
+            stateMachineService.commit(logEntity);
+            node.setLastApplied(logEntity.getIndex());
+            log.info("logEntity successfully commit to state machine,logEntity info: {}",logEntity);
+        } else {
+            // 回滚之前的日志
+            logService.deleteFromFirstIndex(logEntity.getIndex());
+            log.warn("logEntity fail to commit,logEntity info: {}",logEntity);
+
+            log.warn("node: {} become leader fail",node.getNodeConfig().getAddress());
+            node.setStatus(NodeStatus.FOLLOW);
+            node.setVotedFor(StringUtils.EMPTY_STR);
+            node.getNodeConfig().setLeaderAddress(StringUtils.EMPTY_STR);
+        }
     }
 }
