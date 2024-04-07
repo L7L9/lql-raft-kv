@@ -32,8 +32,9 @@
 
 ### idea启动
 
-1. `config.yml`配置：写入对应节点的address数组（可包含自身节点）
-2. `idea`中配置：
+1. `maven`：先加载maven依赖，然后在plugins的protobuf插件中使用`compile`和`compile-custom`命令生成对应的protobuf类
+2. `config.yml`配置：写入对应节点的address数组（可包含自身节点）
+3. `idea`中配置：
    * 添加对应个数的application启动项
    * `VM options`添加参数：`-Dserver.port=8000`（即当前节点的rpc启动端口）
 
