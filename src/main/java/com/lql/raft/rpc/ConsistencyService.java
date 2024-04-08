@@ -114,20 +114,22 @@ public class ConsistencyService extends ConsistencyServiceGrpc.ConsistencyServic
             node.setCurrentTerm(request.getTerm());
             // 判断是否为心跳,为心跳则没有携带新日志
             if(request.getEntriesCount() == 0){
+                long nextCommit = node.getCommitIndex() + 1;
                 // 日志提交到状态机，前提是leader已经把该日志提交了
                 if(request.getLeaderCommit() > node.getCommitIndex()){
                     // 将commitIndex设置为leaderCommit和自身日志最后一个index的较小值
-                    node.setCommitIndex(Math.min(request.getLeaderCommit(), logService.getLastIndex()));
+                    long minCommitIndex = Math.min(request.getLeaderCommit(), logService.getLastIndex());
+                    node.setCommitIndex(minCommitIndex);
+                    node.setLastApplied(minCommitIndex);
 
-                    long nextCommit = node.getCommitIndex() + 1;
-                    while(nextCommit <= node.getCommitIndex()){
-                        stateMachineService.commit(logService.get(nextCommit));
-                        ++nextCommit;
-                    }
                 }
-
+                while(nextCommit <= node.getCommitIndex()){
+                    stateMachineService.commit(logService.get(nextCommit));
+                    ++nextCommit;
+                }
                 log.info("node receive heart beat,address: {},from address: {}",node.getNodeConfig().getAddress(),request.getLeaderId());
-                response.setTerm(node.getCurrentTerm());
+                response.setTerm(node.getCurrentTerm()).setSuccess(true);
+                node.setVotedFor(StringUtils.EMPTY_STR);
                 return;
             }
 
@@ -165,7 +167,7 @@ public class ConsistencyService extends ConsistencyServiceGrpc.ConsistencyServic
                         .setTerm(log.getTerm())
                         .setOperation(operation));
             }
-
+            response.setSuccess(true);
             long nextCommitIndex = node.getCommitIndex() + 1;
             // 设置条目索引
             if(request.getLeaderCommit() > node.getCommitIndex()){
