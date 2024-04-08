@@ -77,7 +77,7 @@ public class ClientService extends ClientServiceGrpc.ClientServiceImplBase {
                       responseObserver.onCompleted();
                       return;
                 }
-                responseObserver.onNext(builder.setData(value).setMessage("查询成功").build());
+                responseObserver.onNext(builder.setIsSuccess(true).setData(value).setMessage("查询成功").build());
                 responseObserver.onCompleted();
             }
         } finally {
@@ -103,10 +103,12 @@ public class ClientService extends ClientServiceGrpc.ClientServiceImplBase {
      * @return boolean 成功返回true
      */
     private boolean dealPutRequest(ClientParam request){
+        if(StringUtils.isEmpty(request.getKey()) || StringUtils.isEmpty(request.getValue())){
+            return false;
+        }
         // 包装请求为logEntity
         Operation operation = new Operation().setKey(request.getKey()).setValue(request.getValue());
         LogEntity logEntity = new LogEntity().setTerm(node.getCurrentTerm()).setOperation(operation);
-
         // 预提交
         logService.write(logEntity);
 
